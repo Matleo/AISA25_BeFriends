@@ -1,3 +1,18 @@
+## How to use Streamlit UI
+
+The project includes a modern Streamlit frontend for searching and exploring events.
+
+### To launch the Streamlit app:
+
+```sh
+pip install streamlit  # if not already installed
+streamlit run streamlit_app.py
+```
+
+The app will open in your browser (usually at [http://localhost:8501](http://localhost:8501)).
+
+Make sure your FastAPI backend is running (see Quickstart below) so the UI can fetch events.
+
 befriends/
   app.py                # FastAPI app composition root
   common/               # Config, telemetry, shared utils
