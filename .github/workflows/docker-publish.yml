@@ -26,4 +26,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/aisa25_befriends:latest
+          tags: ghcr.io/${{ github.repository_owner || 'matleo' }}/aisa25_befriends:latest
