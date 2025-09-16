@@ -14,7 +14,9 @@ from .web.search_controller import SearchController
 from .web.admin_controller import AdminController
 
 # FastAPI imports
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException, status, Depends
+import os
+from load_events_from_csv import import_events_from_csv
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -72,6 +74,12 @@ def create_app() -> FastAPI:
     search_controller = application.search_controller()
     admin_controller = application.admin_controller()
 
+    # --- AUTOMATE CSV IMPORT ON STARTUP ---
+    @app.on_event("startup")
+    def import_csv_on_startup():
+        result = import_events_from_csv(verbose=True)
+        print(f"[Startup] Imported {result['imported']} events from CSV. Errors: {len(result['errors'])}")
+
     @app.get("/search")
     def search(
         query_text: str = Query(..., description="Search text"),
@@ -91,6 +99,18 @@ def create_app() -> FastAPI:
         filters = {k: v for k, v in filters.items() if v is not None}
         result = search_controller.handle_search(query_text, **filters)
         return JSONResponse(content=result)
+
+    # --- API ENDPOINT TO TRIGGER CSV IMPORT (with password auth) ---
+    def check_password(password: str = Query(..., description="Admin password")):
+        default_pw = os.environ.get("CSV_IMPORT_PASSWORD", "import123")
+        if password != default_pw:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password")
+        return True
+
+    @app.post("/admin/import-csv")
+    def import_csv(password_ok: bool = Depends(check_password)):
+        result = import_events_from_csv(verbose=False)
+        return {"imported": result["imported"], "errors": result["errors"]}
 
     @app.post("/admin/reingest")
     def reingest():
