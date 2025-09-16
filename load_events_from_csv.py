@@ -24,16 +24,24 @@ def parse_datetime(dt_str):
         return datetime.now()
     return datetime.now()
 
-def main():
-    repo = CatalogRepository(DB_URL)
+
+def import_events_from_csv(csv_path=CSV_PATH, db_url=DB_URL, validate=True, verbose=True):
+    repo = CatalogRepository(db_url)
     events = []
-    with open(CSV_PATH, newline='', encoding='utf-8') as csvfile:
+    errors = []
+    with open(csv_path, newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
-        for row in reader:
+        for i, row in enumerate(reader, 1):
+            # Validation: name and date are required
+            name = row.get("event-name")
+            date_val = parse_date(row.get("event-datetime"))
+            if validate and (not name or not date_val):
+                errors.append(f"Row {i}: Missing required field(s): name/date")
+                continue
             event = Event(
                 id=None,
-                name=row.get("event-name"),
-                date=parse_date(row.get("event-datetime")),
+                name=name,
+                date=date_val,
                 time_text=row.get("event-datetime"),
                 location=row.get("event-location"),
                 description=row.get("event-type"),
@@ -47,9 +55,16 @@ def main():
                 venue=row.get("event-location"),
             )
             events.append(event)
-    print(f"Upserting {len(events)} events...")
+    if verbose:
+        print(f"Upserting {len(events)} events...")
     repo.upsert(events)
-    print("Done.")
+    if verbose:
+        print("Done.")
+        if errors:
+            print("Validation errors:")
+            for err in errors:
+                print(err)
+    return {"imported": len(events), "errors": errors}
 
 if __name__ == "__main__":
-    main()
+    import_events_from_csv()

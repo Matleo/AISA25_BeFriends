@@ -1,0 +1,24 @@
+name: Auto Import Events CSV
+
+on:
+  push:
+    paths:
+      - 'befriends/data/06_events.csv'
+      - 'load_events_from_csv.py'
+
+jobs:
+  import-events:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Import events from CSV
+        run: |
+          python load_events_from_csv.py
