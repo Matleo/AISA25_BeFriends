@@ -4,6 +4,7 @@ from befriends.domain.search_models import SearchResult
 from befriends.domain.event import Event
 from datetime import date, datetime
 
+
 def make_event(**kwargs):
     base = dict(
         id="1",
@@ -19,16 +20,18 @@ def make_event(**kwargs):
         category=None,
         tags=None,
         price=None,
-        venue=None
+        venue=None,
     )
     base.update(kwargs)
     return Event(**base)
+
 
 def test_to_narrative_missing_optional_fields(formatter):
     event = make_event(name="No Details")
     result = SearchResult(events=[event], total=1)
     narrative = formatter.to_narrative(result)
     assert "No Details" in narrative
+
 
 def test_to_narrative_truncates_after_5_events(formatter):
     events = [make_event(id=str(i), name=f"Event {i}", category="Music") for i in range(7)]
@@ -40,6 +43,7 @@ def test_to_narrative_truncates_after_5_events(formatter):
 @pytest.fixture
 def formatter():
     return ResponseFormatter()
+
 
 def test_to_narrative_empty(formatter):
     result = SearchResult(events=[], total=0)
@@ -53,6 +57,7 @@ def test_to_cards_empty(formatter):
     cards = formatter.to_cards(result)
     assert isinstance(cards, list)
     assert cards == []
+
 
 def test_to_narrative_and_cards_with_events(formatter):
     event = make_event(
@@ -74,5 +79,9 @@ def test_to_narrative_and_cards_with_events(formatter):
     assert "Concert" in narrative
     assert "Music" in narrative
     assert "20 EUR" in narrative
-    assert any(card["category"] == "Music" for card in cards)
-    assert any(card["tags"] == ["live", "rock"] for card in cards)
+    assert any(
+        card["category"] == "Music" for card in cards
+    )
+    assert any(
+        card["tags"] == ["live", "rock"] for card in cards
+    )

@@ -78,7 +78,10 @@ def create_app() -> FastAPI:
     @app.on_event("startup")
     def import_csv_on_startup():
         result = import_events_from_csv(verbose=True)
-        print(f"[Startup] Imported {result['imported']} events from CSV. Errors: {len(result['errors'])}")
+        print(
+            f"[Startup] Imported {result['imported']} events from CSV. "
+            f"Errors: {len(result['errors'])}"
+        )
 
     @app.get("/search")
     def search(
@@ -104,13 +107,18 @@ def create_app() -> FastAPI:
     def check_password(password: str = Query(..., description="Admin password")):
         default_pw = os.environ.get("CSV_IMPORT_PASSWORD", "import123")
         if password != default_pw:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password"
+            )
         return True
 
     @app.post("/admin/import-csv")
     def import_csv(password_ok: bool = Depends(check_password)):
         result = import_events_from_csv(verbose=False)
-        return {"imported": result["imported"], "errors": result["errors"]}
+        return {
+            "imported": result["imported"],
+            "errors": result["errors"]
+        }
 
     @app.post("/admin/reingest")
     def reingest():
