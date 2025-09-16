@@ -21,6 +21,6 @@ jobs:
           pip install -r requirements.txt
           pip install flake8 mypy
       - name: Run flake8
-        run: flake8 befriends/
+        run: flake8 befriends/ --max-line-length=88
       - name: Run mypy
         run: mypy befriends/
