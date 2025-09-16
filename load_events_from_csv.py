@@ -1,10 +1,11 @@
 import csv
-from datetime import datetime, date
+from datetime import datetime
 from befriends.domain.event import Event
 from befriends.catalog.repository import CatalogRepository
 
 CSV_PATH = "befriends/data/06_events.csv"
 DB_URL = "sqlite:///events.db"  # Change if you want a different DB
+
 
 def parse_date(dt_str):
     # Try to parse date or return None
@@ -14,6 +15,7 @@ def parse_date(dt_str):
     except Exception:
         return None
     return None
+
 
 def parse_datetime(dt_str):
     # Try to parse datetime or return now
@@ -50,7 +52,10 @@ def import_events_from_csv(csv_path=CSV_PATH, db_url=DB_URL, validate=True, verb
                 source_id=None,
                 ingested_at=datetime.now(),
                 category=row.get("event-type"),
-                tags=[t.strip() for t in (row.get("dance_style") or "").split("/") if t.strip()] or None,
+                tags=[
+                    t.strip() for t in (row.get("dance_style") or "").split("/")
+                    if t.strip()
+                ] or None,
                 price=row.get("price"),
                 venue=row.get("event-location"),
             )
@@ -65,6 +70,7 @@ def import_events_from_csv(csv_path=CSV_PATH, db_url=DB_URL, validate=True, verb
             for err in errors:
                 print(err)
     return {"imported": len(events), "errors": errors}
+
 
 if __name__ == "__main__":
     import_events_from_csv()

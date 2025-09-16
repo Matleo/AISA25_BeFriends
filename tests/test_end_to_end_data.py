@@ -5,10 +5,9 @@ from befriends.search.relevance import RelevancePolicy
 from befriends.response.formatter import ResponseFormatter
 from befriends.web.search_controller import SearchController
 from befriends.common.telemetry import Telemetry
-
-
 import datetime
 from befriends.domain.event import Event
+
 
 @pytest.fixture(scope="module")
 def controller():
@@ -68,18 +67,24 @@ def test_end_to_end_music_berlin_fuzzy(controller):
     # At least one card should have 'music' in name/category/description/tags
     found = False
     for card in response["cards"]:
-        if any("music" in (str(card.get(field) or "").lower()) for field in ["title", "category", "description"]):
+        if any(
+            "music" in (str(card.get(field) or "").lower())
+            for field in ["title", "category", "description"]
+        ):
             found = True
-        if card.get("tags") and any("music" in (t or "").lower() for t in card["tags"]):
+        if card.get("tags") and any(
+            "music" in (t or "").lower() for t in card["tags"]
+        ):
             found = True
     assert found
+
 
 def test_end_to_end_ranking_by_recency_and_relevance(controller):
     # Should return events ordered by recency and relevance (most recent and best match first)
     response = controller.handle_search(query_text="salsa")
     assert "cards" in response
     cards = response["cards"]
-    # If there are at least 2 salsa events, the first should be as recent or more relevant than the second
+    # first event should be as recent or more relevant than the second
     if len(cards) > 1:
         date1 = cards[0]["date"]
         date2 = cards[1]["date"]
@@ -91,6 +96,7 @@ def test_end_to_end_ranking_by_recency_and_relevance(controller):
             assert d1 >= d2 or True  # Accept equal or more recent first
         except Exception:
             pass
+
 
 def test_end_to_end_dance_freiburg(controller):
     response = controller.handle_search(query_text="dance", city="Freiburg")

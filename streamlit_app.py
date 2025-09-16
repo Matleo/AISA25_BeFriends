@@ -44,7 +44,8 @@ if submitted:
                 st.write(f"**City:** {event.get('city', 'N/A')}")
                 st.write(f"**Category:** {event.get('category', 'N/A')}")
                 st.write(f"**Description:** {event.get('description', 'N/A')}")
-                st.write(f"**Tags:** {', '.join(event.get('tags', [])) if event.get('tags') else 'N/A'}")
+                tags = event.get('tags', [])
+                st.write(f"**Tags:** {', '.join(tags) if tags else 'N/A'}")
                 st.divider()
     else:
         st.info("No events found for your search.")
