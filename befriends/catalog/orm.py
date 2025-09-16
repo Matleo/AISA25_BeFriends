@@ -8,6 +8,7 @@ from sqlalchemy import (
     Text,
 )
 from sqlalchemy.orm import declarative_base, sessionmaker
+import uuid
 from befriends.domain.event import Event
 
 Base = declarative_base()  # type: ignore
@@ -15,7 +16,7 @@ Base = declarative_base()  # type: ignore
 
 class EventORM(Base):  # type: ignore[misc, valid-type]
     __tablename__ = "events"
-    id = Column(String, primary_key=True)
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, nullable=False)
     date = Column(Date, nullable=False)
     time_text = Column(String)
