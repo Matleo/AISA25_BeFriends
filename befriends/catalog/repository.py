@@ -123,7 +123,7 @@ class CatalogRepository:
             logger.info(
                 f"Search returned {len(events)} events for text '{text}' "
                 f"and filters {filters}."
-            )
+            )  # noqa: E501
             return events
         except Exception as e:
             logger.error(f"Error during search_text: {e}")
