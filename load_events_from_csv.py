@@ -1,4 +1,5 @@
 import csv
+import os
 from datetime import datetime
 from befriends.domain.event import Event
 from befriends.catalog.repository import CatalogRepository
@@ -26,6 +27,11 @@ def parse_datetime(dt_str):
 
 
 def import_events_from_csv(csv_path=CSV_PATH, db_url=DB_URL, validate=True, verbose=True):
+    # Always delete the current DB to ensure a fresh schema
+    if db_url.startswith('sqlite:///'):
+        db_path = db_url.replace('sqlite:///', '')
+        if os.path.exists(db_path):
+            os.remove(db_path)
     repo = CatalogRepository(db_url)
     events = []
     errors = []
@@ -33,10 +39,11 @@ def import_events_from_csv(csv_path=CSV_PATH, db_url=DB_URL, validate=True, verb
         reader = csv.DictReader(csvfile)
         for i, row in enumerate(reader, 1):
             # Require name and date
-            name = row.get("event-name")
-            date_val = parse_date(row.get("event-datetime"))
+            name = row.get("event-name") or None
+            date_str = row.get("event-datetime") or None
+            date_val = parse_date(date_str) if date_str else None
             if validate and (not name or not date_val):
-                errors.append(f"Row {i}: Missing required field(s): name/date")
+                errors.append(f"Row {i}: Missing required field(s): name/date | Data: {row}")
                 continue
             event = Event(
                 id=None,
