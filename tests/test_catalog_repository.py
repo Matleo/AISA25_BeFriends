@@ -28,11 +28,11 @@ def sample_event():
 def test_upsert_duplicate_id_overwrites(repo):
     event1 = sample_event()
     event2 = sample_event()
-    event2 = event2.__class__(**{**event2.__dict__, "id": "dup1", "name": "B"})
-    event1 = event1.__class__(**{**event1.__dict__, "id": "dup1", "name": "A"})
+    event2 = event2.__class__(**{**event2.__dict__, "id": 42, "name": "B"})
+    event1 = event1.__class__(**{**event1.__dict__, "id": 42, "name": "A"})
     repo.upsert([event1])
     repo.upsert([event2])
-    found = repo.find_by_id("dup1")
+    found = repo.find_by_id(42)
     assert found.name == "B"
 
 

@@ -6,7 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Optional
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, date
 
 
 @dataclass(frozen=True)
@@ -42,7 +42,7 @@ class Event:
 class EventModel(BaseModel):
     id: Optional[str] = None
     name: str
-    date: datetime.date
+    date: date
     time_text: Optional[str] = None
     location: Optional[str] = None
     description: Optional[str] = None
