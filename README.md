@@ -1,4 +1,33 @@
 ## How to use Streamlit UI
+### Features of the Streamlit UI
+- Search and filter events by keyword, city, category, and date range
+- View event details (description, venue, price, tags, etc.) in expandable cards
+- Responsive, modern interface for quick exploration
+
+### Configuration & Environment
+- The Streamlit app expects the FastAPI backend to be running at `http://localhost:8000` by default.
+- To change the API URL, edit the `API_URL` variable at the top of `streamlit_app.py`.
+- No additional environment variables are required for the UI.
+
+### Backend/Frontend Integration
+- The Streamlit UI fetches events from the FastAPI backend `/search` endpoint.
+- Make sure to start the backend before launching the UI.
+
+### Data Import
+- To import or update event data, use the admin endpoint:
+  ```sh
+  curl -X POST "http://localhost:8000/admin/reingest"
+  ```
+- You can also place new CSVs in `befriends/data/` and trigger ingestion as above.
+
+### Troubleshooting
+- If you see "API did not return a list of events", check that the backend is running and reachable.
+- For port conflicts, change the port in the Streamlit or FastAPI launch command.
+- If you change the DB schema, delete `events.db` before running tests or the backend.
+- For missing dependencies, run `pip install -r requirements.txt`.
+
+### Screenshot
+Add a screenshot or GIF of the Streamlit UI here for a quick visual reference (optional).
 
 The project includes a modern Streamlit frontend for searching and exploring events.
 
