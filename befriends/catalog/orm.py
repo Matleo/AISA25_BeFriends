@@ -15,7 +15,7 @@ Base = declarative_base()  # type: ignore
 
 class EventORM(Base):  # type: ignore[misc, valid-type]
     __tablename__ = "events"
-    id = Column('id', Integer, primary_key=True, autoincrement=True)
+    id = Column(String, primary_key=True)
     name = Column(String, nullable=False)
     date = Column(Date, nullable=False)
     time_text = Column(String)
@@ -29,7 +29,7 @@ class EventORM(Base):  # type: ignore[misc, valid-type]
     price = Column(String)
     venue = Column(String)
     # tags as comma-separated string for simplicity
-    tags = Column(String)
+    tags = Column(Text)
 
     def to_domain(self) -> "Event":
         from datetime import datetime, date as dt_date
