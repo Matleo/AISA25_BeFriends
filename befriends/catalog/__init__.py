@@ -1,4 +1,2 @@
+
 """Catalog repository for events."""
-
-
-

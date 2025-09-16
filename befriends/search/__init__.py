@@ -1,4 +1,2 @@
+
 """Search and relevance logic."""
-
-
-

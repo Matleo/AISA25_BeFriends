@@ -1,4 +1,2 @@
+
 """Response formatting for UI."""
-
-
-
