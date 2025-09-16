@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 from .common.config import AppConfig
 from .common.telemetry import Telemetry
 from .ingestion.service import IngestionService
@@ -12,13 +11,12 @@ from .search.service import SearchService
 from .response.formatter import ResponseFormatter
 from .web.search_controller import SearchController
 from .web.admin_controller import AdminController
-
-# FastAPI imports
 from fastapi import FastAPI, Query, HTTPException, status, Depends
 import os
 from load_events_from_csv import import_events_from_csv
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
 
 
 class Application:
@@ -60,8 +58,6 @@ class Application:
         """Return the admin controller."""
         return self.admin_controller_inst
 
-
-from contextlib import asynccontextmanager
 
 def create_app() -> FastAPI:
     """Create and configure FastAPI app, wiring controllers to endpoints."""

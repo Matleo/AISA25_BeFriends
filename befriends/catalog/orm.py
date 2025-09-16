@@ -43,7 +43,8 @@ class EventORM(Base):  # type: ignore[misc, valid-type]
             city=str(self.city) if self.city is not None else None,
             region=str(self.region) if self.region is not None else None,
             source_id=str(self.source_id) if self.source_id is not None else None,
-            ingested_at=self.ingested_at if isinstance(self.ingested_at, datetime) else datetime.now(),
+            ingested_at=self.ingested_at if isinstance(self.ingested_at, datetime)
+            else datetime.now(),
             category=str(self.category) if self.category is not None else None,
             tags=self.tags.split(",") if self.tags else None,
             price=str(self.price) if self.price is not None else None,
