@@ -2,7 +2,6 @@ from sqlalchemy import (
     create_engine,
     Column,
     String,
-    Integer,
     Date,
     DateTime,
     Text,
@@ -15,6 +14,7 @@ Base = declarative_base()  # type: ignore
 
 
 class EventORM(Base):  # type: ignore[misc, valid-type]
+    """SQLAlchemy ORM model for events table. Uses string PK and correct types for SQLite compatibility."""
     __tablename__ = "events"
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, nullable=False)
@@ -29,7 +29,6 @@ class EventORM(Base):  # type: ignore[misc, valid-type]
     category = Column(String)
     price = Column(String)
     venue = Column(String)
-    # tags as comma-separated string for simplicity
     tags = Column(Text)
 
     def to_domain(self) -> "Event":
@@ -56,16 +55,12 @@ class EventORM(Base):  # type: ignore[misc, valid-type]
     def from_domain(event: "Event") -> "EventORM":
         """Create EventORM from Event domain object, auto-converting id/date/datetime if needed."""
         import datetime
-        # Convert id to int if possible, else None
         id_val = event.id
-        # Always use str or None for id
         if id_val is not None:
             id_val = str(id_val)
-        # Convert date if string
         date_val = event.date
         if isinstance(date_val, str):
             date_val = datetime.datetime.strptime(date_val, "%Y-%m-%d").date()
-        # Convert ingested_at if string
         ingested_val = event.ingested_at
         if isinstance(ingested_val, str):
             try:

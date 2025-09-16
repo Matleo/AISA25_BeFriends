@@ -22,7 +22,14 @@ docker run -p 8000:8000 --env-file .env <your-dockerhub-username>/aisa25_befrien
 
 # AISA25_BeFriends
 
+
 **Modern event search backend** with FastAPI, SQLAlchemy, and robust automation.
+
+## Database Schema Notes
+- The `events` table uses a **string primary key** (`id: str`), compatible with custom and auto-generated IDs.
+- If no `id` is provided, a **UUID is auto-generated** for each event (see `EventORM` in `befriends/catalog/orm.py`).
+- All fields use correct types for SQLite (e.g., `String`, `Date`, `DateTime`, `Text`).
+- The test/CI setup **removes `events.db` before every run** to ensure a fresh schema and avoid migration issues.
 
 ## Why use AISA25_BeFriends?
 - Fast, flexible event search API (fuzzy, filters, recency)
@@ -71,12 +78,15 @@ docker build -t aisa25_befriends .
 docker run -p 8000:8000 --env-file .env aisa25_befriends
 ```
 
+
 ## Test & Coverage
 ```sh
 pytest
 flake8 befriends/
 coverage run -m pytest && coverage report -m
 ```
+
+**Note:** If you change the DB schema, delete `events.db` before running tests to avoid type mismatches. This is automated in CI.
 
 ## Contributing
 - Fork, branch, and PR as usual
