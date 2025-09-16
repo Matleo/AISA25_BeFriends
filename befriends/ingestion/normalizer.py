@@ -12,6 +12,7 @@ class Normalizer:
 
     def normalize(self, raw: dict) -> Event:
         """Convert a raw dict to an Event."""
+        from datetime import datetime
         try:
             # ...map fields, clean data...
             return Event(
@@ -24,7 +25,7 @@ class Normalizer:
                 city=None,
                 region=None,
                 source_id=None,
-                ingested_at=None,
+                ingested_at=raw.get("ingested_at") or datetime.now(),
             )
         except Exception as e:
             logging.getLogger(self.__class__.__name__).error(

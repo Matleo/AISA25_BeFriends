@@ -16,6 +16,7 @@ class AppConfig:
     """Holds application configuration sources and feature flags."""
 
     def __init__(self, db_url: str, sources: list[dict], features: dict[str, Any]):
+        self.sources: list[dict] = sources
         """Initialize config with db_url, sources, and features."""
         self.db_url = db_url
         self.sources = sources
