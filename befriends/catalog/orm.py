@@ -2,6 +2,7 @@ from sqlalchemy import (
     create_engine,
     Column,
     String,
+    Integer,
     Date,
     DateTime,
     Text,
@@ -14,7 +15,7 @@ Base = declarative_base()
 
 class EventORM(Base):
     __tablename__ = "events"
-    id = Column(String, primary_key=True)
+    id = Column('id', Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     date = Column(Date, nullable=False)
     time_text = Column(String)
