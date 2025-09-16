@@ -10,10 +10,10 @@ from sqlalchemy import (
 from sqlalchemy.orm import declarative_base, sessionmaker
 from befriends.domain.event import Event
 
-Base = declarative_base()
+Base = declarative_base()  # type: ignore
 
 
-class EventORM(Base):
+class EventORM(Base):  # type: ignore[misc, valid-type]
     __tablename__ = "events"
     id = Column('id', Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
@@ -32,21 +32,22 @@ class EventORM(Base):
     tags = Column(String)
 
     def to_domain(self) -> "Event":
+        from datetime import datetime, date as dt_date
         return Event(
             id=str(self.id) if self.id is not None else None,
-            name=str(self.name),
-            date=self.date,
-            time_text=self.time_text,
-            location=self.location,
-            description=self.description,
-            city=self.city,
-            region=self.region,
-            source_id=self.source_id,
-            ingested_at=self.ingested_at,
-            category=self.category,
+            name=str(self.name) if self.name is not None else "",
+            date=self.date if isinstance(self.date, dt_date) else dt_date.today(),
+            time_text=str(self.time_text) if self.time_text is not None else None,
+            location=str(self.location) if self.location is not None else None,
+            description=str(self.description) if self.description is not None else None,
+            city=str(self.city) if self.city is not None else None,
+            region=str(self.region) if self.region is not None else None,
+            source_id=str(self.source_id) if self.source_id is not None else None,
+            ingested_at=self.ingested_at if isinstance(self.ingested_at, datetime) else datetime.now(),
+            category=str(self.category) if self.category is not None else None,
             tags=self.tags.split(",") if self.tags else None,
-            price=self.price,
-            venue=self.venue,
+            price=str(self.price) if self.price is not None else None,
+            venue=str(self.venue) if self.venue is not None else None,
         )
 
     @staticmethod
@@ -55,11 +56,9 @@ class EventORM(Base):
         import datetime
         # Convert id to int if possible, else None
         id_val = event.id
+        # Always use str or None for id
         if id_val is not None:
-            try:
-                id_val = int(id_val)
-            except Exception:
-                id_val = None
+            id_val = str(id_val)
         # Convert date if string
         date_val = event.date
         if isinstance(date_val, str):

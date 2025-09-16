@@ -19,7 +19,7 @@ class RelevancePolicy:
             from datetime import date as dt_date
 
             today = dt_date.today()
-            if hasattr(event, "date") and event.date:
+            if hasattr(event, "date") and event.date is not None:
                 if event.date >= today:
                     s -= (event.date - today).days * 0.5  # future events: less penalty
                 else:

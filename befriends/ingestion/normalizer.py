@@ -12,13 +12,23 @@ class Normalizer:
 
     def normalize(self, raw: dict) -> Event:
         """Convert a raw dict to an Event."""
-        from datetime import datetime
+        from datetime import datetime, date as dt_date
         try:
             # ...map fields, clean data...
+            raw_date = raw.get("date")
+            if isinstance(raw_date, str):
+                try:
+                    event_date = dt_date.fromisoformat(raw_date)
+                except Exception:
+                    event_date = dt_date.today()
+            elif isinstance(raw_date, dt_date):
+                event_date = raw_date
+            else:
+                event_date = dt_date.today()
             return Event(
                 id=None,
                 name=raw.get("name", ""),
-                date=raw.get("date"),
+                date=event_date,
                 time_text=None,
                 location=None,
                 description=None,
@@ -28,6 +38,7 @@ class Normalizer:
                 ingested_at=raw.get("ingested_at") or datetime.now(),
             )
         except Exception as e:
+            import logging
             logging.getLogger(self.__class__.__name__).error(
                 f"Error normalizing event: {e}"
             )
