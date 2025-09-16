@@ -33,8 +33,8 @@ class EventORM(Base):
 
     def to_domain(self) -> "Event":
         return Event(
-            id=self.id,
-            name=self.name,
+            id=str(self.id) if self.id is not None else None,
+            name=str(self.name),
             date=self.date,
             time_text=self.time_text,
             location=self.location,

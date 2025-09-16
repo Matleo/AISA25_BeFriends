@@ -33,8 +33,10 @@ class Application:
         self.relevance_policy = RelevancePolicy()
         self.search_service = SearchService(self.catalog_repo, self.relevance_policy)
         self.response_formatter = ResponseFormatter()
+        from .ingestion.normalizer import Normalizer
+        from .ingestion.deduper import Deduper
         self.ingestion_service = IngestionService(
-            [], None, None, self.catalog_repo, self.telemetry
+            [], Normalizer(), Deduper(), self.catalog_repo, self.telemetry
         )
         self.search_controller_inst = SearchController(
             self.search_service, self.response_formatter, self.telemetry
