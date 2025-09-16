@@ -1,0 +1,2 @@
+# Cron job to import the newest CSV from the data folder every day at 2:00 AM
+0 2 * * * cd /Users/matthiasleopold/Library/CloudStorage/OneDrive-Persönlich/Privat/Arbeit/2025\)\ AISA_Befriends && /bin/zsh -c 'source .venv/bin/activate && PYTHONPATH=. python scripts/import_newest_csv.py >> cron_import.log 2>&1'

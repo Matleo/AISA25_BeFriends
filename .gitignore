@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# VSCode
+.vscode/
+
+# macOS
+.DS_Store
+
+# Test, coverage, and build
+.coverage
+.tox/
+.pytest_cache/
+dist/
+build/
+*.egg-info/
+
+# Logs
+*.log
+
+# System
+Thumbs.db
+
+# Other
+*.sqlite3
+*.db
+
+# Ignore secrets
+.env
+.env.*
+secrets.*
