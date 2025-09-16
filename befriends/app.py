@@ -61,9 +61,20 @@ class Application:
         return self.admin_controller_inst
 
 
+from contextlib import asynccontextmanager
+
 def create_app() -> FastAPI:
     """Create and configure FastAPI app, wiring controllers to endpoints."""
-    app = FastAPI(title="Befriends API", version="1.0")
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        result = import_events_from_csv(verbose=True)
+        print(
+            f"[Startup] Imported {result['imported']} events from CSV. "
+            f"Errors: {len(result['errors'])}"
+        )
+        yield
+
+    app = FastAPI(title="Befriends API", version="1.0", lifespan=lifespan)
     # Allow CORS for local dev
     app.add_middleware(
         CORSMiddleware,
@@ -75,15 +86,6 @@ def create_app() -> FastAPI:
     application = Application.build_default()
     search_controller = application.search_controller()
     admin_controller = application.admin_controller()
-
-    # --- AUTOMATE CSV IMPORT ON STARTUP ---
-    @app.on_event("startup")
-    def import_csv_on_startup():
-        result = import_events_from_csv(verbose=True)
-        print(
-            f"[Startup] Imported {result['imported']} events from CSV. "
-            f"Errors: {len(result['errors'])}"
-        )
 
     @app.get("/search")
     def search(

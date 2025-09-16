@@ -51,18 +51,37 @@ class EventORM(Base):
 
     @staticmethod
     def from_domain(event: "Event") -> "EventORM":
-        """Create EventORM from Event domain object."""
+        """Create EventORM from Event domain object, auto-converting id/date/datetime if needed."""
+        import datetime
+        # Convert id to int if possible, else None
+        id_val = event.id
+        if id_val is not None:
+            try:
+                id_val = int(id_val)
+            except Exception:
+                id_val = None
+        # Convert date if string
+        date_val = event.date
+        if isinstance(date_val, str):
+            date_val = datetime.datetime.strptime(date_val, "%Y-%m-%d").date()
+        # Convert ingested_at if string
+        ingested_val = event.ingested_at
+        if isinstance(ingested_val, str):
+            try:
+                ingested_val = datetime.datetime.fromisoformat(ingested_val)
+            except Exception:
+                ingested_val = datetime.datetime.strptime(ingested_val, "%Y-%m-%d %H:%M:%S.%f")
         return EventORM(
-            id=event.id,
+            id=id_val,
             name=event.name,
-            date=event.date,
+            date=date_val,
             time_text=event.time_text,
             location=event.location,
             description=event.description,
             city=event.city,
             region=event.region,
             source_id=event.source_id,
-            ingested_at=event.ingested_at,
+            ingested_at=ingested_val,
             category=event.category,
             tags=",".join(event.tags) if event.tags else None,
             price=event.price,

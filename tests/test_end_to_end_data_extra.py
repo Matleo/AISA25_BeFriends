@@ -10,6 +10,26 @@ from befriends.common.telemetry import Telemetry
 @pytest.fixture(scope="module")
 def controller():
     repo = CatalogRepository()
+    # Add a Salsa-tagged event for tag search test
+    from befriends.domain.event import Event
+    import datetime
+    salsa_event = Event(
+        id="100",
+        name="Salsa Night",
+        date=datetime.date.today(),
+        time_text="21:00",
+        location="Test Club",
+        description="A salsa dance event",
+        city="Test City",
+        region="Test Region",
+        source_id="src-test",
+        ingested_at=datetime.datetime.now(),
+        category="Dance",
+        tags=["Salsa", "party"],
+        price="10",
+        venue="Test Club",
+    )
+    repo.upsert([salsa_event])
     policy = RelevancePolicy()
     service = SearchService(repo, policy)
     formatter = ResponseFormatter()
