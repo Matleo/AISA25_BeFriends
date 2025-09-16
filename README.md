@@ -107,6 +107,34 @@ Contributions are welcome! To get started:
 
 ---
 
+## Test Coverage Reporting
+
+This project supports test coverage reporting using `coverage.py`.
+
+### How to Run Coverage Locally
+1. Install coverage:
+   ```sh
+   pip install coverage
+   ```
+2. Run tests with coverage:
+   ```sh
+   coverage run -m pytest
+   coverage report -m
+   coverage html  # (optional) generates an HTML report in htmlcov/
+   ```
+3. Check the terminal output or open `htmlcov/index.html` in your browser for a detailed report.
+
+### Coverage Badge (Optional)
+- Integrate with [Codecov](https://codecov.io/) or [Coveralls](https://coveralls.io/) for automatic coverage badges on GitHub.
+- Add the badge markdown to the top of your README after setting up the service.
+
+Example badge (Codecov):
+```
+[![codecov](https://codecov.io/gh/Matleo/AISA25_BeFriends/branch/main/graph/badge.svg)](https://codecov.io/gh/Matleo/AISA25_BeFriends)
+```
+
+---
+
 **Author:** Matthias Leopold  
 [GitHub](https://github.com/Matleo)  
 [LinkedIn](https://www.linkedin.com/in/matthias-leopold-0ba93413b/)
