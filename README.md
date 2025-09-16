@@ -167,6 +167,34 @@ Replace `<your-username>` and `<your-dockerhub-username>` with your actual usern
 
 ---
 
+## Streamlit Frontend
+
+A modern Streamlit UI is included for quick event search and beautiful results display.
+
+- File: `streamlit_app.py`
+- Deploy on [Streamlit Community Cloud](https://streamlit.io/cloud) for instant public access.
+- Configure the API URL in the code to point to your deployed FastAPI backend.
+
+## Automated Data Import
+
+- **On GitHub Actions:** CSV data is auto-imported to the DB on every push to `befriends/data/06_events.csv` or the import script.
+- **On App Startup:** The FastAPI app auto-imports the latest CSV data on every startup.
+- **Via API Endpoint:**
+  - `POST /admin/import-csv?password=import123` (default password, override with `CSV_IMPORT_PASSWORD` env var)
+  - Triggers a CSV import and returns a summary (imported count, validation errors).
+
+## Data Validation
+
+- The import script validates required fields (name, date) and logs errors for missing/invalid rows.
+- Errors are reported in the API and on the console during import.
+
+## CI/CD Improvements
+
+- Linting (flake8) now allows lines up to 88 characters for modern Python/Black compatibility.
+- Automated workflows for lint, type check, test, coverage, and Docker build/publish.
+
+---
+
 **Author:** Matthias Leopold  
 [GitHub](https://github.com/Matleo)  
 [LinkedIn](https://www.linkedin.com/in/matthias-leopold-0ba93413b/)
