@@ -9,8 +9,10 @@ class RelevancePolicy:
     """Ranks events for search results."""
 
     def rank(self, events: list[Event], query: SearchQuery) -> list[Event]:
-        """Rank events by recency, keyword/category/tag match, price proximity, and filter match."""
-
+        """
+        Rank events by recency, keyword/category/tag match,
+        price proximity, and filter match.
+        """
         def score(event: Event) -> float:
             s = 0.0
             # Recency: prioritize future events, then most recent

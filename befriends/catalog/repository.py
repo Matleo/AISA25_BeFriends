@@ -102,7 +102,7 @@ class CatalogRepository:
                     q = q.filter(EventORM.date >= filters["date_from"])
                 if filters.get("date_to"):
                     q = q.filter(EventORM.date <= filters["date_to"])
-                # Price range filter (assumes price is stored as string, try to cast to float)
+                # Price range filter (assumes price is string)
                 if filters.get("price_min"):
                     q = q.filter(
                         cast(EventORM.price, Float) >= filters["price_min"]
@@ -123,7 +123,7 @@ class CatalogRepository:
             logger.info(
                 f"Search returned {len(events)} events for text '{text}' "
                 f"and filters {filters}."
-            )  # noqa: E501
+            )
             return events
         except Exception as e:
             logger.error(f"Error during search_text: {e}")
