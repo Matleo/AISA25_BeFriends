@@ -3,24 +3,24 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime
 from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 @dataclass(frozen=True)
 class Event:
     """Immutable event entity representing a social event."""
+
     id: Optional[str]
     name: str
-    date: date
+    date: 'date'
     time_text: Optional[str]
     location: Optional[str]
     description: Optional[str]
     city: Optional[str]
     region: Optional[str]
     source_id: Optional[str]
-    ingested_at: datetime
+    ingested_at: 'datetime'
     category: Optional[str] = None
     tags: Optional[List[str]] = None
     price: Optional[str] = None
@@ -35,23 +35,22 @@ class Event:
             summary += f" [{self.category}]"
         return summary
 
+
 # Pydantic model for API validation
 class EventModel(BaseModel):
     id: Optional[str] = None
     name: str
-    date: date
+    date: 'date'
     time_text: Optional[str] = None
     location: Optional[str] = None
     description: Optional[str] = None
     city: Optional[str] = None
     region: Optional[str] = None
     source_id: Optional[str] = None
-    ingested_at: datetime
+    ingested_at: 'datetime'
     category: Optional[str] = None
     tags: Optional[List[str]] = None
     price: Optional[str] = None
     venue: Optional[str] = None
 
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}

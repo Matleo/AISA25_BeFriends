@@ -7,10 +7,16 @@ from ..search.service import SearchService
 from ..response.formatter import ResponseFormatter
 from ..common.telemetry import Telemetry
 
+
 class SearchController:
     """Handles user search requests and prepares UI responses."""
 
-    def __init__(self, search_service: SearchService, response_formatter: ResponseFormatter, telemetry: Telemetry):
+    def __init__(
+        self,
+        search_service: SearchService,
+        response_formatter: ResponseFormatter,
+        telemetry: Telemetry,
+    ):
         """Initialize with dependencies."""
         self.search_service = search_service
         self.response_formatter = response_formatter
@@ -20,6 +26,7 @@ class SearchController:
         """Handle a search request and return UI payload."""
         logger = logging.getLogger(self.__class__.__name__)
         from ..domain.search_models import SearchQuery
+
         try:
             # Build SearchQuery from query_text and all supported filters
             query = SearchQuery(
@@ -31,7 +38,7 @@ class SearchController:
                 category=filters.get("category"),
                 tags=filters.get("tags"),
                 price_min=filters.get("price_min"),
-                price_max=filters.get("price_max")
+                price_max=filters.get("price_max"),
             )
             # Search for events
             result = self.search_service.find_events(query)

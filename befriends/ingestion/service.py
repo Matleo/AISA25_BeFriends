@@ -7,6 +7,7 @@ from .deduper import Deduper
 from ..catalog.repository import CatalogRepository
 from ..common.telemetry import Telemetry
 
+
 class IngestionService:
     """Coordinates ingestion from sources into the catalog."""
 
@@ -33,7 +34,9 @@ class IngestionService:
             events = self.normalizer.normalize_batch(raw)
             deduped = self.deduper.dedupe(events)
             upserted = self.repo.upsert(deduped)
-            self.telemetry.record_event("ingest", source=type(connector).__name__, count=upserted)
+            self.telemetry.record_event(
+                "ingest", source=type(connector).__name__, count=upserted
+            )
             total_upserted += upserted
         return total_upserted
 
@@ -43,5 +46,7 @@ class IngestionService:
         events = self.normalizer.normalize_batch(raw)
         deduped = self.deduper.dedupe(events)
         upserted = self.repo.upsert(deduped)
-        self.telemetry.record_event("ingest", source=type(connector).__name__, count=upserted)
+        self.telemetry.record_event(
+            "ingest", source=type(connector).__name__, count=upserted
+        )
         return upserted

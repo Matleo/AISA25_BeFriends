@@ -3,6 +3,7 @@
 from __future__ import annotations
 from .base import SourceConnector
 
+
 class HtmlSourceConnector(SourceConnector):
     """Fetches events from HTML sources."""
 

@@ -7,6 +7,7 @@ from ..catalog.repository import CatalogRepository
 from .relevance import RelevancePolicy
 from ..domain.search_models import SearchQuery, SearchResult
 
+
 class SearchService:
     """Handles event search and relevance ranking."""
 

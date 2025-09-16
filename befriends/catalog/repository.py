@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 
-
 import logging
 from ..domain.event import Event
 from .orm import EventORM, get_engine_and_session
@@ -78,7 +77,7 @@ class CatalogRepository:
 
     def search_text(self, text: str, filters: dict | None = None) -> list[Event]:
         logger = self._get_logger()
-        from sqlalchemy import or_, and_
+        from sqlalchemy import or_, cast, Float
         session = self.Session()
         try:
             q = session.query(EventORM)
@@ -89,7 +88,7 @@ class CatalogRepository:
                         EventORM.name.ilike(pattern),
                         EventORM.category.ilike(pattern),
                         EventORM.description.ilike(pattern),
-                        EventORM.tags.ilike(pattern)
+                        EventORM.tags.ilike(pattern),
                     )
                 )
             if filters:
@@ -104,20 +103,27 @@ class CatalogRepository:
                 if filters.get("date_to"):
                     q = q.filter(EventORM.date <= filters["date_to"])
                 # Price range filter (assumes price is stored as string, try to cast to float)
-                if filters.get("price_min") or filters.get("price_max"):
-                    from sqlalchemy import cast, Float
-                    if filters.get("price_min"):
-                        q = q.filter(cast(EventORM.price, Float) >= filters["price_min"])
-                    if filters.get("price_max"):
-                        q = q.filter(cast(EventORM.price, Float) <= filters["price_max"])
+                if filters.get("price_min"):
+                    q = q.filter(
+                        cast(EventORM.price, Float) >= filters["price_min"]
+                    )
+                if filters.get("price_max"):
+                    q = q.filter(
+                        cast(EventORM.price, Float) <= filters["price_max"]
+                    )
                 # Tags filter (any tag match)
                 if filters.get("tags"):
-                    tag_filters = [EventORM.tags.ilike(f"%{tag}%") for tag in filters["tags"]]
+                    tag_filters = [
+                        EventORM.tags.ilike(f"%{tag}%") for tag in filters["tags"]
+                    ]
                     q = q.filter(or_(*tag_filters))
             # Always order by most recent first (recency bias)
             q = q.order_by(EventORM.date.desc())
             events = [e.to_domain() for e in q.all()]
-            logger.info(f"Search returned {len(events)} events for text '{text}' and filters {filters}.")
+            logger.info(
+                f"Search returned {len(events)} events for text '{text}' "
+                f"and filters {filters}."
+            )
             return events
         except Exception as e:
             logger.error(f"Error during search_text: {e}")

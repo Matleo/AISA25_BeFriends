@@ -5,14 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from .event import Event, EventModel
 
 
 @dataclass(frozen=True)
-
 class SearchQuery:
     """Encapsulates search parameters for events."""
+
     text: str
     date_from: Optional[date]
     date_to: Optional[date]
@@ -27,7 +27,17 @@ class SearchQuery:
 
     def has_filters(self) -> bool:
         """Return True if any filters are set."""
-        return any([self.date_from, self.date_to, self.city, self.region, self.category, self.tags])
+        return any(
+            [
+                self.date_from,
+                self.date_to,
+                self.city,
+                self.region,
+                self.category,
+                self.tags,
+            ]
+        )
+
 
 # Pydantic model for API validation
 
@@ -45,18 +55,15 @@ class SearchQueryModel(BaseModel):
     # audience_size_min: Optional[int] = None
     # audience_size_max: Optional[int] = None
 
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}
 
 
 class SearchResultModel(BaseModel):
     events: List[EventModel]
     total: int
 
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}
+
 
 @dataclass(frozen=True)
 class SearchResult:

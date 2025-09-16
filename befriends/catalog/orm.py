@@ -1,11 +1,16 @@
-
-from sqlalchemy import create_engine, Column, String, Date, DateTime, Text, Integer, Table, ForeignKey
-from sqlalchemy.orm import declarative_base, sessionmaker, relationship
-from typing import List, Optional
-from datetime import date, datetime
+from sqlalchemy import (
+    create_engine,
+    Column,
+    String,
+    Date,
+    DateTime,
+    Text,
+)
+from sqlalchemy.orm import declarative_base, sessionmaker
 from befriends.domain.event import Event
 
 Base = declarative_base()
+
 
 class EventORM(Base):
     __tablename__ = "events"
@@ -25,8 +30,7 @@ class EventORM(Base):
     # tags as comma-separated string for simplicity
     tags = Column(String)
 
-    def to_domain(self) -> 'Event':
-        from befriends.domain.event import Event
+    def to_domain(self) -> "Event":
         return Event(
             id=self.id,
             name=self.name,
@@ -41,11 +45,11 @@ class EventORM(Base):
             category=self.category,
             tags=self.tags.split(",") if self.tags else None,
             price=self.price,
-            venue=self.venue
+            venue=self.venue,
         )
 
     @staticmethod
-    def from_domain(event: 'Event') -> 'EventORM':
+    def from_domain(event: "Event") -> "EventORM":
         """Create EventORM from Event domain object."""
         return EventORM(
             id=event.id,
@@ -61,8 +65,9 @@ class EventORM(Base):
             category=event.category,
             tags=",".join(event.tags) if event.tags else None,
             price=event.price,
-            venue=event.venue
+            venue=event.venue,
         )
+
 
 def get_engine_and_session(db_url: str = "sqlite:///events.db"):
     """Create SQLAlchemy engine and session factory."""

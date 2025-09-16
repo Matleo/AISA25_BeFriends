@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from ..domain.search_models import SearchResult
-from ..domain.event import Event
+
 
 class ResponseFormatter:
     """Formats search results as narratives and cards."""

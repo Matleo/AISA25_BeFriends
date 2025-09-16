@@ -3,6 +3,7 @@
 from __future__ import annotations
 from contextlib import contextmanager
 
+
 class Telemetry:
     """Records events and timings for observability."""
 

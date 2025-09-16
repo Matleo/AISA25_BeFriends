@@ -4,6 +4,7 @@ from __future__ import annotations
 from ..ingestion.service import IngestionService
 from ..common.telemetry import Telemetry
 
+
 class AdminController:
     """Handles admin requests for ingestion and status."""
 

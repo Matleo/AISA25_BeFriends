@@ -5,9 +5,9 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 
+
 class SourceConnector(ABC):
     """Abstract connector for event sources."""
-
 
     @abstractmethod
     def fetch_raw(self) -> list[dict]:
@@ -16,7 +16,9 @@ class SourceConnector(ABC):
             # Implementation in subclass
             pass
         except Exception as e:
-            logging.getLogger(self.__class__.__name__).error(f"Error fetching raw data: {e}")
+            logging.getLogger(self.__class__.__name__).error(
+                f"Error fetching raw data: {e}"
+            )
             raise
 
     @abstractmethod
@@ -26,5 +28,7 @@ class SourceConnector(ABC):
             # Implementation in subclass
             pass
         except Exception as e:
-            logging.getLogger(self.__class__.__name__).error(f"Error in healthcheck: {e}")
+            logging.getLogger(self.__class__.__name__).error(
+                f"Error in healthcheck: {e}"
+            )
             raise

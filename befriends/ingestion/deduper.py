@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from ..domain.event import Event
 
+
 class Deduper:
     """Detects and merges duplicate events."""
 
@@ -14,7 +15,9 @@ class Deduper:
             # ...compare fields...
             return False
         except Exception as e:
-            logging.getLogger(self.__class__.__name__).error(f"Error in is_duplicate: {e}")
+            logging.getLogger(self.__class__.__name__).error(
+                f"Error in is_duplicate: {e}"
+            )
             raise
 
     def merge(self, a: Event, b: Event) -> Event:
