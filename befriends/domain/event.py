@@ -15,7 +15,7 @@ class Event:
 
     id: Optional[str]
     name: str
-    date: datetime.date
+    date: date
     time_text: Optional[str]
     location: Optional[str]
     description: Optional[str]
