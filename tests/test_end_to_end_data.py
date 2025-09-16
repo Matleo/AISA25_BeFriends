@@ -12,7 +12,7 @@ from befriends.domain.event import Event
 @pytest.fixture(scope="module")
 def controller():
     repo = CatalogRepository(db_url="sqlite:///test_events.db")
-    # Seed test data for robust CI runs
+        # Seed test data
     today = datetime.date.today()
     now = datetime.datetime.now()
     events = [
@@ -64,7 +64,7 @@ def test_end_to_end_music_berlin_fuzzy(controller):
     assert "cards" in response
     assert isinstance(response["cards"], list)
     assert len(response["cards"]) > 0
-    # At least one card should have 'music' in name/category/description/tags
+        # At least one card should match
     found = False
     for card in response["cards"]:
         if any(
@@ -84,7 +84,7 @@ def test_end_to_end_ranking_by_recency_and_relevance(controller):
     response = controller.handle_search(query_text="salsa")
     assert "cards" in response
     cards = response["cards"]
-    # first event should be as recent or more relevant than the second
+        # First event should be as recent or more relevant
     if len(cards) > 1:
         date1 = cards[0]["date"]
         date2 = cards[1]["date"]
@@ -93,7 +93,7 @@ def test_end_to_end_ranking_by_recency_and_relevance(controller):
         try:
             d1 = dt.strptime(date1, "%Y-%m-%d").date()
             d2 = dt.strptime(date2, "%Y-%m-%d").date()
-            assert d1 >= d2 or True  # Accept equal or more recent first
+                assert d1 >= d2 or True
         except Exception:
             pass
 
