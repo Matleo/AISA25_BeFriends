@@ -6,9 +6,51 @@ from befriends.response.formatter import ResponseFormatter
 from befriends.web.search_controller import SearchController
 from befriends.common.telemetry import Telemetry
 
+
+import datetime
+from befriends.domain.event import Event
+
 @pytest.fixture(scope="module")
 def controller():
-    repo = CatalogRepository()
+    repo = CatalogRepository(db_url="sqlite:///test_events.db")
+    # Seed test data for robust CI runs
+    today = datetime.date.today()
+    now = datetime.datetime.now()
+    events = [
+        Event(
+            id="1",
+            name="Dance Night",
+            date=today,
+            time_text="20:00",
+            location="Freiburg Hall",
+            description="A fun dance event in Freiburg",
+            city="Freiburg",
+            region="Baden",
+            source_id="src1",
+            ingested_at=now,
+            category="Party",
+            tags=["dance", "party"],
+            price="15",
+            venue="Freiburg Hall",
+        ),
+        Event(
+            id="2",
+            name="Salsa Festival",
+            date=today,
+            time_text="18:00",
+            location="Berlin Arena",
+            description="Salsa music and dance",
+            city="Berlin",
+            region="Berlin",
+            source_id="src2",
+            ingested_at=now,
+            category="Music",
+            tags=["salsa", "music"],
+            price="20",
+            venue="Berlin Arena",
+        ),
+    ]
+    repo.upsert(events)
     policy = RelevancePolicy()
     service = SearchService(repo, policy)
     formatter = ResponseFormatter()
