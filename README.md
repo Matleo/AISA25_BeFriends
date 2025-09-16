@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/Matleo/AISA25_BeFriends/branch/main/graph/badge.svg)](https://codecov.io/gh/Matleo/AISA25_BeFriends)
+
 # AISA25_BeFriends
 
 AISA25_BeFriends is a modern, production-grade backend for event discovery and search, built with Python 3.11, FastAPI, SQLAlchemy, and a clean architecture approach.
