@@ -14,7 +14,8 @@ Base = declarative_base()  # type: ignore
 
 
 class EventORM(Base):  # type: ignore[misc, valid-type]
-    """SQLAlchemy ORM model for events table. Uses string PK and correct types for SQLite compatibility."""
+    """SQLAlchemy ORM model for events table. 
+    Uses string PK and correct types for SQLite compatibility."""
     __tablename__ = "events"
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, nullable=False)
