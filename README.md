@@ -62,5 +62,54 @@ requirements.txt        # Pinned dependencies
 .env.example            # Example environment config
 ```
 
+## API Documentation
+
+This project uses FastAPI, which provides automatic interactive API docs:
+- **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+
+### Main Endpoints
+- `GET /search` — Search for events. Query params: `query_text`, `date_from`, `date_to`, `city`, `region`, `category`, `tags`, `price_min`, `price_max`
+- `POST /admin/reingest` — Trigger re-ingestion of all sources (admin)
+
+Example request:
+```sh
+curl -X GET "http://localhost:8000/search?query_text=music&city=Berlin"
+curl -X POST "http://localhost:8000/admin/reingest"
+```
+
+See the interactive docs for full parameter and response details.
+
+---
+
+## Contribution & Development
+
+Contributions are welcome! To get started:
+
+1. **Fork the repository** and clone your fork.
+2. **Create a new branch** for your feature or fix:
+   ```sh
+   git checkout -b my-feature
+   ```
+3. **Install dependencies** and set up your environment (see Quickstart above).
+4. **Run tests and linting** before submitting:
+   ```sh
+   pytest
+   flake8 befriends/
+   ```
+5. **Submit a pull request** with a clear description of your changes.
+
+### Development Guidelines
+- Follow PEP8 and use `black` and `flake8` for formatting/linting.
+- Write unit and integration tests for new features.
+- Keep code modular and maintain clean architecture boundaries.
+- Document public APIs and major changes in the README or a `CHANGELOG.md`.
+
+---
+
+**Author:** Matthias Leopold  
+[GitHub](https://github.com/Matleo)  
+[LinkedIn](https://www.linkedin.com/in/matthias-leopold-0ba93413b/)
+
 ## License
 MIT
