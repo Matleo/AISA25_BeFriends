@@ -4,11 +4,10 @@ from befriends.domain.event import Event
 from befriends.catalog.repository import CatalogRepository
 
 CSV_PATH = "befriends/data/06_events.csv"
-DB_URL = "sqlite:///events.db"  # Change if you want a different DB
+DB_URL = "sqlite:///events.db"
 
 
 def parse_date(dt_str):
-    # Try to parse date or return None
     try:
         if dt_str and len(dt_str) >= 10:
             return datetime.strptime(dt_str[:10], "%Y-%m-%d").date()
@@ -18,7 +17,6 @@ def parse_date(dt_str):
 
 
 def parse_datetime(dt_str):
-    # Try to parse datetime or return now
     try:
         if dt_str and len(dt_str) >= 16:
             return datetime.strptime(dt_str[:16], "%Y-%m-%d %H:%M")
@@ -34,7 +32,7 @@ def import_events_from_csv(csv_path=CSV_PATH, db_url=DB_URL, validate=True, verb
     with open(csv_path, newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
         for i, row in enumerate(reader, 1):
-            # Validation: name and date are required
+            # Require name and date
             name = row.get("event-name")
             date_val = parse_date(row.get("event-datetime"))
             if validate and (not name or not date_val):
@@ -47,7 +45,7 @@ def import_events_from_csv(csv_path=CSV_PATH, db_url=DB_URL, validate=True, verb
                 time_text=row.get("event-datetime"),
                 location=row.get("event-location"),
                 description=row.get("event-type"),
-                city=None,  # You can parse city from location if needed
+                city=None,
                 region=row.get("region"),
                 source_id=None,
                 ingested_at=datetime.now(),
