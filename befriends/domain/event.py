@@ -6,7 +6,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Optional
 from pydantic import BaseModel
-from datetime import datetime, date
+
+import datetime
 
 
 @dataclass(frozen=True)
@@ -15,14 +16,14 @@ class Event:
 
     id: Optional[str]
     name: str
-    date: date
+    date: datetime.date
     time_text: Optional[str]
     location: Optional[str]
     description: Optional[str]
     city: Optional[str]
     region: Optional[str]
     source_id: Optional[str]
-    ingested_at: 'datetime'
+    ingested_at: datetime.datetime
     category: Optional[str] = None
     tags: Optional[List[str]] = None
     price: Optional[str] = None
@@ -42,14 +43,14 @@ class Event:
 class EventModel(BaseModel):
     id: Optional[str] = None
     name: str
-    date: date
+    date: datetime.date
     time_text: Optional[str] = None
     location: Optional[str] = None
     description: Optional[str] = None
     city: Optional[str] = None
     region: Optional[str] = None
     source_id: Optional[str] = None
-    ingested_at: 'datetime'
+    ingested_at: datetime.datetime
     category: Optional[str] = None
     tags: Optional[List[str]] = None
     price: Optional[str] = None
