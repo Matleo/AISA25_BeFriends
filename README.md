@@ -137,6 +137,36 @@ Example badge (Codecov):
 
 ---
 
+## Docker Usage
+
+You can run this project as a Docker container.
+
+### Build and Run Locally
+```sh
+# Build the image
+docker build -t aisa25_befriends .
+
+# Run the container
+# (Expose port 8000 and mount your .env if needed)
+docker run -p 8000:8000 --env-file .env aisa25_befriends
+```
+
+### Pull from GitHub Container Registry
+```sh
+docker pull ghcr.io/<your-username>/aisa25_befriends:latest
+docker run -p 8000:8000 --env-file .env ghcr.io/<your-username>/aisa25_befriends:latest
+```
+
+### Pull from Docker Hub (if configured)
+```sh
+docker pull <your-dockerhub-username>/aisa25_befriends:latest
+docker run -p 8000:8000 --env-file .env <your-dockerhub-username>/aisa25_befriends:latest
+```
+
+Replace `<your-username>` and `<your-dockerhub-username>` with your actual usernames.
+
+---
+
 **Author:** Matthias Leopold  
 [GitHub](https://github.com/Matleo)  
 [LinkedIn](https://www.linkedin.com/in/matthias-leopold-0ba93413b/)
