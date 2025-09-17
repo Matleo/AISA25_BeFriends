@@ -1,141 +1,234 @@
+# ...existing code...
 
 import streamlit as st
-import uuid
 import datetime
-import os
-import re
-import traceback
-from befriends.chatbot_client import ChatbotConfig, ChatbotClient
+import json
+from pathlib import Path
+from components.ui import (
+    render_event_card,
+    render_chips,
+    inject_styles,
+    render_sidebar_filters,
+    render_event_recommendations,
+)
+from befriends.chatbot_client import ChatbotClient, ChatbotConfig
 
+import json
+from pathlib import Path
 
-# Helper to load HTML templates from file
-def load_html_templates(path):
-    with open(path, encoding="utf-8") as f:
-        return f.read()
+# --- Karolina's profile ---
+def load_profile(profile_path: str = "karolina_profile.json") -> dict:
+    """Load user profile from JSON file, or return fallback profile if not found."""
+    profile_file = Path(profile_path)
+    if profile_file.exists():
+        with open(profile_file, "r", encoding="utf-8") as f:
+            return json.load(f)
+    st.warning(f"Profile file {profile_path} not found. Using fallback profile.")
+    return {
+        "name": "Karolina",
+        "age": 33,
+        "city": "Basel",
+        "address": "Dornacherstr.",
+        "interests": [
+            "dance (zouk, salsa)",
+            "water sports",
+            "swimming in the Rhine",
+            "being around water",
+            "music (guitar, ukulele)",
+            "concerts",
+            "festivals",
+            "jam sessions",
+            "dogs",
+            "kids",
+            "fun social activities",
+            "outdoor activities",
+            "dog-friendly gatherings",
+            "cultural festivals"
+        ]
+    }
 
+KAROLINA_PROFILE = load_profile()
 
-# Helper to extract template by id from HTML file
-def get_template(html, template_id):
-    pattern = rf'<script type="text/template" id="{template_id}">(.*?)</script>'
-    match = re.search(pattern, html, re.DOTALL)
-    return match.group(1).strip() if match else None
+def get_onboarding_message() -> str:
+    """Return the onboarding message for new users."""
+    return (
+        "👋 Hi! I'm EventBot. Your preferences are set up and used only for recommendations. "
+        "Looking for something fun this weekend? Just ask or see my recommendations below!"
+    )
 
+def get_default_city() -> str:
+    """Get the default city from the user profile."""
+    return KAROLINA_PROFILE["city"]
 
-# Path to HTML templates
-TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "assets", "chat_bubbles.html")
-HTML_TEMPLATES = load_html_templates(TEMPLATE_PATH)
-SYSTEM_BUBBLE = get_template(HTML_TEMPLATES, "system-bubble")
-USER_BUBBLE = get_template(HTML_TEMPLATES, "user-bubble")
-ASSISTANT_BUBBLE = get_template(HTML_TEMPLATES, "assistant-bubble")
-TYPING_BUBBLE = get_template(HTML_TEMPLATES, "typing-bubble")
+def get_default_filters() -> dict:
+    """Return default filter values for event recommendations."""
+    # Less restrictive: no date or price filter by default
+    # Data-aware: if no cities in DB, set city filter to empty
+    import sqlite3
+    db_path = "events.db"
+    city_value = KAROLINA_PROFILE["city"]
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cur = conn.cursor()
+            cur.execute('SELECT COUNT(*) FROM events WHERE city IS NOT NULL AND city != "";')
+            city_count = cur.fetchone()[0]
+            if city_count == 0:
+                city_value = ""
+    except Exception:
+        city_value = ""
+    return {
+        "city": city_value,
+        "category": "",
+        "date_from": None,
+        "date_to": None,
+        "price_min": None,
+        "price_max": None,
+        "apply_filters": True,
+    }
 
-st.set_page_config(page_title="Chatbot Conversation", page_icon="💬", layout="centered")
-st.title("🤖 Chat with EventBot")
-st.subheader("Conversation")
-
-# Generate a unique user_id per session and hide from UI
-if "user_id" not in st.session_state:
-    st.session_state["user_id"] = str(uuid.uuid4())
-user_id = st.session_state["user_id"]
-
-# Chat history state
-if "chat_history" not in st.session_state:
-    st.session_state["chat_history"] = [
-        {
-            "role": "assistant",
-            "content": (
-                "👋 Hi! I'm EventBot. Ask me anything about events or just say hello!"
-            ),
-            "timestamp": datetime.datetime.now().strftime("%H:%M"),
-        }
+def get_interest_keywords() -> list:
+    """Return keywords for filtering or boosting recommendations."""
+    return [
+        "dance", "zouk", "salsa", "water", "swimming", "Rhine", "music", "guitar", "ukulele",
+        "concert", "festival", "jam", "dog", "kids", "outdoor", "social", "dog-friendly", "cultural"
     ]
 
-# Rerun flag to avoid infinite rerun
-if "pending_rerun" not in st.session_state:
-    st.session_state["pending_rerun"] = False
 
-# Show chat history section with welcome message, icons, and timestamps
-st.markdown("---")
-st.subheader("Conversation")
-
-# Render chat history
-for msg in st.session_state["chat_history"]:
-    timestamp = msg.get("timestamp")
-    if not timestamp and msg["role"] != "system":
-        timestamp = datetime.datetime.now().strftime("%H:%M")
-        msg["timestamp"] = timestamp
-    if msg["role"] == "user":
-        html = USER_BUBBLE.replace("{{content}}", msg["content"])
-        html = html.replace("{{timestamp}}", timestamp)
-        st.markdown(html, unsafe_allow_html=True)
-    elif msg["role"] == "assistant":
-        html = ASSISTANT_BUBBLE.replace("{{content}}", msg["content"])
-        html = html.replace("{{timestamp}}", timestamp)
-        st.markdown(html, unsafe_allow_html=True)
-
-# If waiting for bot, show a placeholder message bubble for EventBot above the input (single line)
-if st.session_state.get("waiting_for_bot", False):
-    st.markdown(TYPING_BUBBLE, unsafe_allow_html=True)
-
-
-
-# Always show input form, but disable while waiting for bot
-with st.form(key="chat_form", clear_on_submit=True):
-    waiting = st.session_state.get("waiting_for_bot", False)
-    user_message = st.text_input(
-        "Your message",
-        key="user_message_input",
-        disabled=waiting,
-    )
-    submitted = st.form_submit_button("Send", disabled=waiting)
-    if submitted and user_message and not waiting:
-        # Add user message immediately with timestamp
-        st.session_state["chat_history"].append(
-            {
-                "role": "user",
-                "content": user_message,
-                "timestamp": datetime.datetime.now().strftime("%H:%M"),
-            }
-        )
-        # Set waiting flag and trigger rerun for bot response
-        st.session_state["waiting_for_bot"] = True
-        st.rerun()
-
-if st.session_state.get("waiting_for_bot", False):
-    # Only process if last message is from user and no assistant response yet
-    history = st.session_state["chat_history"]
-    if len(history) > 0 and history[-1]["role"] == "user":
+# --- Chat UI logic extracted for clarity ---
+def render_chat_ui(chatbot_client):
+    st.markdown("""
+    <div class='chat-card' style='margin-top:2.5em; margin-bottom:2.5em; box-shadow:0 4px 24px #0001; border-radius:18px; background:#fff; padding:2.2em 2.5em 1.5em 2.5em; border:2.5px solid #d1e3f8;'>
+      <div style='display:flex; align-items:center; gap:1em; margin-bottom:0.5em;'>
+        <span style='font-size:2.1rem; font-weight:700;'>💬 Chat with EventBot</span>
+        <div style='flex:1;'></div>
+        <button onclick="window.location.reload()" style='background:none; border:none; cursor:pointer; font-size:1.3em; margin-left:auto;' title='Clear Conversation'>🗑️</button>
+      </div>
+    """, unsafe_allow_html=True)
+    chat_container = st.container()
+    with chat_container:
+        st.markdown("<div class='chat-area-scroll' style='min-height:120px; max-height:340px; overflow-y:auto; margin-bottom:1.2em;'>", unsafe_allow_html=True)
+        for msg in st.session_state.messages:
+            st.chat_message(msg["role"]).write(msg["content"])
+        st.markdown("</div>", unsafe_allow_html=True)
+    prompt = st.chat_input("Type your message…")
+    if prompt:
+        # Show user message immediately in chat history
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        # After user input, get response and append
         try:
-            config = ChatbotConfig()
-            client = ChatbotClient(config)
-            response = client.get_response(user_id, history)
-            st.session_state["chat_history"].append(
-                {
-                    "role": "assistant",
-                    "content": response,
-                    "timestamp": datetime.datetime.now().strftime("%H:%M"),
-                }
+            response = chatbot_client.get_response(
+                user_id="eventbot-user",
+                messages=st.session_state.messages,
             )
         except Exception as e:
-            # Always show a visible assistant bubble for errors
-            tb = traceback.format_exc()
-            error_msg = (
-                "😔 Sorry, I couldn't answer that. Please try rephrasing your question or ask "
-                "something simpler. (Error: {} )".format(str(e))
+            response = f"[Error from chatbot backend: {e}]"
+        st.session_state.messages.append({"role": "assistant", "content": response})
+        st.rerun()
+    # Do not rerun after every message append; only after user input
+    selected_quick = None
+    if not st.session_state.messages:
+        quick_replies = [
+            {"label": "What's happening this weekend?", "value": "What's happening this weekend?"},
+            {"label": "Concerts nearby", "value": "Show me concerts nearby"},
+            {"label": "Dance socials", "value": "Any dance socials?"},
+            {"label": "Dog-friendly events", "value": "Dog-friendly events"},
+            {"label": "Outdoor activities", "value": "Outdoor activities this weekend"},
+        ]
+        st.markdown("<div class='quick-reply-row' style='margin-top:1.2em;'>", unsafe_allow_html=True)
+        cols = st.columns(len(quick_replies))
+        for i, chip in enumerate(quick_replies):
+            if cols[i].button(chip["label"], key=f"quickreply_{i}", help=chip["value"], use_container_width=True):
+                selected_quick = chip["value"]
+        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+    if selected_quick:
+        st.session_state.messages.append({"role": "user", "content": selected_quick})
+        try:
+            response = chatbot_client.get_response(
+                user_id="eventbot-user",
+                messages=st.session_state.messages,
             )
-            st.session_state["chat_history"].append(
-                {
-                    "role": "assistant",
-                    "content": error_msg,
-                    "timestamp": datetime.datetime.now().strftime("%H:%M"),
-                }
-            )
-            # Optionally, show the traceback in the Streamlit error area for debugging
-            st.error(f"Backend error: {e}\n\n{tb}")
-        finally:
-            st.session_state["waiting_for_bot"] = False
-            st.rerun()
+        except Exception as e:
+            response = f"[Error from chatbot backend: {e}]"
+        st.session_state.messages.append({"role": "assistant", "content": response})
+        st.rerun()
 
-if st.button("Clear Conversation"):
-    st.session_state["chat_history"] = []
-    st.session_state["user_message_input"] = ""
+
+def main():
+    # --- Chatbot client setup ---
+    try:
+        chatbot_client = ChatbotClient(ChatbotConfig())
+    except Exception as e:
+        st.error(f"Failed to initialize chatbot: {e}")
+        return
+    # --- Session state initialization ---
+    if "show_debug" not in st.session_state:
+        st.session_state.show_debug = False
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    if "show_sidebar" not in st.session_state:
+        st.session_state.show_sidebar = False
+    if "filters" not in st.session_state or not st.session_state.filters:
+        st.session_state.filters = get_default_filters()
+    # Always ensure apply_filters is True on first load to trigger recommendations
+    if "apply_filters" not in st.session_state.filters or not st.session_state.filters["apply_filters"]:
+        st.session_state.filters["apply_filters"] = True
+
+    # --- UI setup ---
+    st.set_page_config(page_title="EventBot", page_icon="🤖", layout="wide")
+    with open("static/eventbot.css") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    with st.sidebar:
+        st.markdown('<div class="harmonized-row2">', unsafe_allow_html=True)
+        st.markdown('<div class="harmonized-checkbox2" style="flex:1;">', unsafe_allow_html=True)
+        st.session_state.show_debug = st.checkbox("Show debug info", value=st.session_state.show_debug, key="debug_toggle")
+        st.markdown('</div><div style="flex:1;display:flex;justify-content:flex-end;">', unsafe_allow_html=True)
+        btn_label = "Hide EventBot Filters" if st.session_state.show_sidebar else "Show EventBot Filters"
+        if st.button(btn_label, key="toggle_sidebar_main", help=None, use_container_width=False, type="secondary"):
+            st.session_state.show_sidebar = not st.session_state.show_sidebar
+        st.markdown('</div></div>', unsafe_allow_html=True)
+
+    st.markdown("""
+    <div style='display: flex; align-items: center; gap: 1.2em; margin-bottom: 0.2em;'>
+        <span style='font-size:2.5rem; font-weight:800; letter-spacing:-2px;'>🤖 EventBot</span>
+        <span style='color:#1976d2; background:#e3f2fd; border-radius:999px; padding:0.3em 1.1em; font-size:1.1em; font-weight:600; margin-left:0.5em;'>your local events concierge</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Onboarding message (top, only if no chat yet)
+    if not st.session_state.messages:
+        st.info(get_onboarding_message())
+
+    # Filters logic
+    if st.session_state.show_sidebar:
+        with st.sidebar:
+            st.markdown("## EventBot Filters")
+            # Removed blue info box
+            filters = render_sidebar_filters(default_city=get_default_city())
+            st.session_state.filters.update(filters)
+    filters = st.session_state.filters
+
+    # Debug info in sidebar
+    if st.session_state.show_debug:
+        with st.sidebar:
+            st.markdown("---")
+            st.markdown("### Debug Info")
+            st.write({
+                "messages": st.session_state.get("messages"),
+                "filters": st.session_state.get("filters"),
+                "show_sidebar": st.session_state.get("show_sidebar"),
+            })
+
+    # --- Split main area into two columns: Chat (left, wide) | Recommendations (right, narrow) ---
+    col_chat, col_recs = st.columns([1.35, 0.95], gap="large")
+    with col_chat:
+        render_chat_ui(chatbot_client)
+    with col_recs:
+        st.markdown("<div style='margin-top:1.5em'></div>", unsafe_allow_html=True)
+        render_event_recommendations(filters=filters)
+
+
+# --- Run the app ---
+if __name__ == "__main__":
+    main()
+
