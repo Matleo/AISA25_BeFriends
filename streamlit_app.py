@@ -13,11 +13,13 @@ st.title("🔎 Event Search Portal")
 CITIES = ["", "Berlin", "Basel", "Vienna", "Zurich"]
 CATEGORIES = ["", "Music", "Clubnacht / Tanzparty", "Theater", "Art", "Workshop"]
 
+
 @st.cache_data(show_spinner=False)
 def fetch_events(params):
     response = requests.get(API_URL, params=params, timeout=10)
     response.raise_for_status()
     return response.json()
+
 
 with st.form("search_form"):
     search_text = st.text_input("Search for events", "")

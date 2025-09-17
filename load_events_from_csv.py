@@ -35,6 +35,7 @@ def import_events_from_csv(csv_path=CSV_PATH, db_url=DB_URL, validate=True, verb
     repo = CatalogRepository(db_url)
     events = []
     errors = []
+
     def cleanse_event_row(row: dict) -> dict:
         """Standardize and clean a single event row dict."""
         # Trim whitespace from all string fields
@@ -53,33 +54,33 @@ def import_events_from_csv(csv_path=CSV_PATH, db_url=DB_URL, validate=True, verb
         reader = csv.DictReader(csvfile)
         for i, row in enumerate(reader, 1):
             # Require name and date
-                row = cleanse_event_row(row)
-                name = row.get("event-name") or None
-                date_str = row.get("event-datetime") or None
-                date_val = parse_date(date_str) if date_str else None
-                if validate and (not name or not date_val):
-                    errors.append(f"Row {i}: Missing required field(s): name/date | Data: {row}")
-                    continue
-                event = Event(
-                    id=None,
-                    name=name,
-                    date=date_val,
-                    time_text=row.get("event-datetime"),
-                    location=row.get("event-location"),
-                    description=row.get("event-type"),
-                    city=row.get("city"),
-                    region=row.get("region"),
-                    source_id=None,
-                    ingested_at=datetime.now(),
-                    category=row.get("event-type"),
-                    tags=[
-                        t.strip() for t in (row.get("dance_style") or "").split("/")
-                        if t.strip()
-                    ] or None,
-                    price=row.get("price"),
-                    venue=row.get("event-location"),
-                )
-                events.append(event)
+            row = cleanse_event_row(row)
+            name = row.get("event-name") or None
+            date_str = row.get("event-datetime") or None
+            date_val = parse_date(date_str) if date_str else None
+            if validate and (not name or not date_val):
+                errors.append(f"Row {i}: Missing required field(s): name/date | Data: {row}")
+                continue
+            event = Event(
+                id=None,
+                name=name,
+                date=date_val,
+                time_text=row.get("event-datetime"),
+                location=row.get("event-location"),
+                description=row.get("event-type"),
+                city=row.get("city"),
+                region=row.get("region"),
+                source_id=None,
+                ingested_at=datetime.now(),
+                category=row.get("event-type"),
+                tags=[
+                    t.strip() for t in (row.get("dance_style") or "").split("/")
+                    if t.strip()
+                ] or None,
+                price=row.get("price"),
+                venue=row.get("event-location"),
+            )
+            events.append(event)
     if verbose:
         print(f"Upserting {len(events)} events...")
     repo.upsert(events)
