@@ -4,6 +4,7 @@ import uuid
 import datetime
 import os
 import re
+import traceback
 from befriends.chatbot_client import ChatbotConfig, ChatbotClient
 
 
@@ -41,10 +42,11 @@ user_id = st.session_state["user_id"]
 if "chat_history" not in st.session_state:
     st.session_state["chat_history"] = [
         {
-            "role": "system",
+            "role": "assistant",
             "content": (
                 "👋 Hi! I'm EventBot. Ask me anything about events or just say hello!"
             ),
+            "timestamp": datetime.datetime.now().strftime("%H:%M"),
         }
     ]
 
@@ -62,10 +64,7 @@ for msg in st.session_state["chat_history"]:
     if not timestamp and msg["role"] != "system":
         timestamp = datetime.datetime.now().strftime("%H:%M")
         msg["timestamp"] = timestamp
-    if msg["role"] == "system":
-        html = SYSTEM_BUBBLE.replace("{{content}}", msg["content"][2:])
-        st.markdown(html, unsafe_allow_html=True)
-    elif msg["role"] == "user":
+    if msg["role"] == "user":
         html = USER_BUBBLE.replace("{{content}}", msg["content"])
         html = html.replace("{{timestamp}}", timestamp)
         st.markdown(html, unsafe_allow_html=True)
@@ -78,48 +77,63 @@ for msg in st.session_state["chat_history"]:
 if st.session_state.get("waiting_for_bot", False):
     st.markdown(TYPING_BUBBLE, unsafe_allow_html=True)
 
-# Input form always visible
-with st.form(key="chat_form", clear_on_submit=True):
-    user_message = st.text_input(
-        "Your message",
-        key="user_message_input",
-        disabled=st.session_state.get("waiting_for_bot", False),
-    )
-    submitted = st.form_submit_button(
-        "Send", disabled=st.session_state.get("waiting_for_bot", False)
-    )
-    if submitted and user_message:
-        # Add user message immediately with timestamp
-        st.session_state["chat_history"].append(
-            {
-                "role": "user",
-                "content": user_message,
-                "timestamp": datetime.datetime.now().strftime("%H:%M"),
-            }
-        )
-        # Set waiting flag and trigger rerun for bot response
-        st.session_state["waiting_for_bot"] = True
-        st.rerun()
 
-# Get bot response if needed (no spinner, handled by UI above)
-if st.session_state.get("waiting_for_bot", False):
-    try:
-        config = ChatbotConfig()
-        client = ChatbotClient(config)
-        response = client.get_response(user_id, st.session_state["chat_history"])
-        st.session_state["chat_history"].append(
-            {
-                "role": "assistant",
-                "content": response,
-                "timestamp": datetime.datetime.now().strftime("%H:%M"),
-            }
+# Only show input form if not waiting for bot
+if not st.session_state.get("waiting_for_bot", False):
+    with st.form(key="chat_form", clear_on_submit=True):
+        user_message = st.text_input(
+            "Your message",
+            key="user_message_input",
+            disabled=False,
         )
-    except ValueError as ve:
-        st.error(f"Configuration error: {ve}")
-    except Exception as e:
-        st.error(f"Chatbot error: {e}")
-    st.session_state["waiting_for_bot"] = False
-    st.rerun()
+        submitted = st.form_submit_button("Send", disabled=False)
+        if submitted and user_message:
+            # Add user message immediately with timestamp
+            st.session_state["chat_history"].append(
+                {
+                    "role": "user",
+                    "content": user_message,
+                    "timestamp": datetime.datetime.now().strftime("%H:%M"),
+                }
+            )
+            # Set waiting flag and trigger rerun for bot response
+            st.session_state["waiting_for_bot"] = True
+            st.rerun()
+
+if st.session_state.get("waiting_for_bot", False):
+    # Only process if last message is from user and no assistant response yet
+    history = st.session_state["chat_history"]
+    if len(history) > 0 and history[-1]["role"] == "user":
+        try:
+            config = ChatbotConfig()
+            client = ChatbotClient(config)
+            response = client.get_response(user_id, history)
+            st.session_state["chat_history"].append(
+                {
+                    "role": "assistant",
+                    "content": response,
+                    "timestamp": datetime.datetime.now().strftime("%H:%M"),
+                }
+            )
+        except Exception as e:
+            # Always show a visible assistant bubble for errors
+            tb = traceback.format_exc()
+            error_msg = (
+                "😔 Sorry, I couldn't answer that. Please try rephrasing your question or ask "
+                "something simpler. (Error: {} )".format(str(e))
+            )
+            st.session_state["chat_history"].append(
+                {
+                    "role": "assistant",
+                    "content": error_msg,
+                    "timestamp": datetime.datetime.now().strftime("%H:%M"),
+                }
+            )
+            # Optionally, show the traceback in the Streamlit error area for debugging
+            st.error(f"Backend error: {e}\n\n{tb}")
+        finally:
+            st.session_state["waiting_for_bot"] = False
+            st.rerun()
 
 if st.button("Clear Conversation"):
     st.session_state["chat_history"] = []
