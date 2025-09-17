@@ -9,11 +9,13 @@ from befriends.domain.event import Event
 from befriends.catalog.repository import CatalogRepository
 import csv
 
+
 def get_newest_csv(data_dir):
     files = glob.glob(os.path.join(data_dir, '*.csv'))
     if not files:
         return None
     return max(files, key=os.path.getmtime)
+
 
 def parse_date(dt_str):
     # Try to parse as ISO, fallback to today, ignore non-date strings
@@ -25,10 +27,12 @@ def parse_date(dt_str):
         except Exception:
             return datetime.today().date()
 
+
 def clean_str(val):
     if val is None:
         return None
     return str(val).strip()
+
 
 def normalize_price(price):
     if not price:
@@ -42,20 +46,27 @@ def normalize_price(price):
         return f"{num} {cur}".strip()
     return price.strip()
 
+
 def deduplicate(events):
     seen = set()
     unique = []
     for e in events:
-        key = (clean_str(e.name).lower() if e.name else None, e.date, clean_str(e.location).lower() if e.location else None)
+        key = (
+            clean_str(e.name).lower() if e.name else None,
+            e.date,
+            clean_str(e.location).lower() if e.location else None
+        )
         if key in seen:
             continue
         seen.add(key)
         unique.append(e)
     return unique
 
+
 def geocode_city(city):
     # Stub for geolocation enrichment (could call an API)
     return None
+
 
 def csv_to_event(row, idx):
     # Validate required fields
@@ -71,11 +82,13 @@ def csv_to_event(row, idx):
     tags = [clean_str(row.get("dance_style"))] if row.get("dance_style") else None
     price = normalize_price(row.get("price"))
     # Enrichment stub: geocode_city(city)
+    event_dt = row.get("event-datetime", "")
+    time_text = event_dt.split(" ")[1] if " " in event_dt else None
     return Event(
         id=f"csv_{idx}",
         name=name,
         date=date_val,
-        time_text=row.get("event-datetime", "").split(" ")[1] if " " in row.get("event-datetime", "") else None,
+        time_text=time_text,
         location=location,
         description=description,
         city=city,
@@ -87,6 +100,7 @@ def csv_to_event(row, idx):
         price=price,
         venue=location
     )
+
 
 def import_newest_csv():
     data_dir = os.path.join(os.path.dirname(__file__), '../befriends/data')
@@ -108,6 +122,7 @@ def import_newest_csv():
     events = deduplicate(events)
     inserted = repo.upsert(events)
     print(f"Inserted {inserted} unique events from {os.path.basename(newest_csv)}.")
+
 
 if __name__ == "__main__":
     import_newest_csv()

@@ -1,4 +1,3 @@
-import sqlalchemy
 import pytest
 from befriends.catalog.repository import CatalogRepository
 from befriends.domain.event import Event
@@ -64,6 +63,8 @@ def test_search_text_with_filters(repo):
         e.city == "Munich" and (e.category or "").lower() == "art"
         for e in results
     )
+
+
 def test_search_text_all_filters(repo):
     from datetime import date, timedelta
     base_event = sample_event()
@@ -92,9 +93,12 @@ def test_search_text_all_filters(repo):
         "date_to": date.today() + timedelta(days=4)
     })
     assert all(
-        float(e.price) >= 12 and float(e.price) <= 14 and e.region == "RegionA" and any("tag1" in (e.tags or "") for t in ["tag1"])
-        for e in results
+        float(e.price) >= 12 and
+        float(e.price) <= 14 and
+        e.region == "RegionA" and
+        any("tag1" in (e.tags or "") for t in ["tag1"]) for e in results
     )
+
 
 def test_upsert_edge_cases(repo):
     # Upsert with None id, tags as None, tags as empty
@@ -103,9 +107,6 @@ def test_upsert_edge_cases(repo):
     event_empty_tags = event.__class__(**{**event.__dict__, "tags": []})
     count = repo.upsert([event_no_id, event_empty_tags])
     assert count == 2
-
-
-
 
     # Insert multiple events with different cities and categories
     base_event = sample_event()

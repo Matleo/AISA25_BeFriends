@@ -8,8 +8,10 @@ from befriends.domain.event import Event
 from befriends.catalog.repository import CatalogRepository
 import os
 
-CSV_PATH = os.path.join(os.path.dirname(__file__), '../befriends/data/dreilaendereck_events_enriched.csv')
+file_path = '../befriends/data/dreilaendereck_events_enriched.csv'
+CSV_PATH = os.path.join(os.path.dirname(__file__), file_path)
 repo = CatalogRepository()
+
 
 def parse_date(dt_str):
     # Try to parse as ISO, else fallback to today
@@ -18,12 +20,15 @@ def parse_date(dt_str):
     except Exception:
         return date.today()
 
+
 def csv_to_event(row, idx):
+    event_dt = row.get("event-datetime", "")
+    time_text = event_dt.split(" ")[1] if " " in event_dt else None
     return Event(
         id=f"csv_{idx}",
         name=row.get("event-name"),
-        date=parse_date(row.get("event-datetime", "")),
-        time_text=row.get("event-datetime", "").split(" ")[1] if " " in row.get("event-datetime", "") else None,
+        date=parse_date(event_dt),
+        time_text=time_text,
         location=row.get("event-location"),
         description=f"{row.get('event-type', '')} | {row.get('organizer', '')}",
         city=row.get("region"),
@@ -35,6 +40,7 @@ def csv_to_event(row, idx):
         price=row.get("price"),
         venue=row.get("event-location")
     )
+
 
 events = []
 with open(CSV_PATH, newline='', encoding='utf-8') as csvfile:

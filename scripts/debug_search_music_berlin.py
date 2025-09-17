@@ -1,5 +1,6 @@
 """
-Debug script: Search for 'music' events in Berlin using the repository directly, to check if filters are working as expected.
+Debug script: Search for 'music' events in Berlin using the repository directly,
+to check if filters are working as expected.
 """
 from befriends.catalog.repository import CatalogRepository
 repo = CatalogRepository()

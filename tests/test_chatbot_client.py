@@ -1,3 +1,7 @@
+import pytest
+from befriends.chatbot_client import ChatbotConfig, ChatbotClient
+
+
 def test_chatbot_client_custom_endpoint_and_key(monkeypatch):
     # Test with custom config values
     def mock_post(url, headers, json, timeout):
@@ -11,6 +15,7 @@ def test_chatbot_client_custom_endpoint_and_key(monkeypatch):
     response = client.get_response("user42", messages)
     assert response == "Custom endpoint reply"
 
+
 def test_chatbot_client_error(monkeypatch):
     # Simulate HTTP error
     def mock_post(url, headers, json, timeout):
@@ -22,6 +27,7 @@ def test_chatbot_client_error(monkeypatch):
     with pytest.raises(Exception):
         client.get_response("user42", messages)
 
+
 def test_chatbot_config_env(monkeypatch):
     # Test config loads from environment
     monkeypatch.setenv("OPENAI_API_KEY", "env-key")
@@ -29,19 +35,20 @@ def test_chatbot_config_env(monkeypatch):
     config = ChatbotConfig()
     assert config.api_key == "env-key"
     assert config.endpoint == "https://env.endpoint"
-import os
-import pytest
-from befriends.chatbot_client import ChatbotConfig, ChatbotClient
+
 
 class MockResponse:
     def __init__(self, json_data, status_code=200):
         self._json = json_data
         self.status_code = status_code
+
     def json(self):
         return self._json
+
     def raise_for_status(self):
         if self.status_code != 200:
             raise Exception("HTTP error")
+
 
 def test_chatbot_client(monkeypatch):
     # Mock requests.post

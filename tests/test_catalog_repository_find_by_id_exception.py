@@ -1,7 +1,7 @@
 import pytest
-import sqlalchemy
 from befriends.catalog.repository import CatalogRepository
 from befriends.domain.event import Event
+
 
 def sample_event():
     from datetime import date, datetime
@@ -18,9 +18,11 @@ def sample_event():
         ingested_at=datetime.now()
     )
 
+
 def test_find_by_id_exception_handling(monkeypatch):
     repo = CatalogRepository()
     # Simulate exception in session.get
+
     def raise_exc(self, *a, **kw):
         raise sqlalchemy.exc.SQLAlchemyError("fail")
     import sqlalchemy.orm
