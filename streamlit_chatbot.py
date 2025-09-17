@@ -78,27 +78,28 @@ if st.session_state.get("waiting_for_bot", False):
     st.markdown(TYPING_BUBBLE, unsafe_allow_html=True)
 
 
-# Only show input form if not waiting for bot
-if not st.session_state.get("waiting_for_bot", False):
-    with st.form(key="chat_form", clear_on_submit=True):
-        user_message = st.text_input(
-            "Your message",
-            key="user_message_input",
-            disabled=False,
+
+# Always show input form, but disable while waiting for bot
+with st.form(key="chat_form", clear_on_submit=True):
+    waiting = st.session_state.get("waiting_for_bot", False)
+    user_message = st.text_input(
+        "Your message",
+        key="user_message_input",
+        disabled=waiting,
+    )
+    submitted = st.form_submit_button("Send", disabled=waiting)
+    if submitted and user_message and not waiting:
+        # Add user message immediately with timestamp
+        st.session_state["chat_history"].append(
+            {
+                "role": "user",
+                "content": user_message,
+                "timestamp": datetime.datetime.now().strftime("%H:%M"),
+            }
         )
-        submitted = st.form_submit_button("Send", disabled=False)
-        if submitted and user_message:
-            # Add user message immediately with timestamp
-            st.session_state["chat_history"].append(
-                {
-                    "role": "user",
-                    "content": user_message,
-                    "timestamp": datetime.datetime.now().strftime("%H:%M"),
-                }
-            )
-            # Set waiting flag and trigger rerun for bot response
-            st.session_state["waiting_for_bot"] = True
-            st.rerun()
+        # Set waiting flag and trigger rerun for bot response
+        st.session_state["waiting_for_bot"] = True
+        st.rerun()
 
 if st.session_state.get("waiting_for_bot", False):
     # Only process if last message is from user and no assistant response yet
