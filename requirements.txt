@@ -1,3 +1,4 @@
+types-requests==2.32.4.20250913
 fastapi==0.110.2
 flask==3.0.3
 requests==2.31.0
