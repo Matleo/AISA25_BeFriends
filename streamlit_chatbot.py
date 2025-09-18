@@ -1,4 +1,49 @@
+from components.ui import render_event_recommendations, get_best_recommended_events
+def is_event_suggestion_request(message: str) -> bool:
+    keywords = [
+        "suggest events", "recommend events", "event suggestions", "show events", "what events", "any events", "find events", "empfehle events", "veranstaltungen", "vorschlagen"
+    ]
+    message_lower = message.lower()
+    return any(kw in message_lower for kw in keywords)
+
+
+
+def format_event_recommendations_for_chat(filters, max_events=5):
+    # Always use the latest filters and profile from session state for consistency
+    filters = st.session_state.get("filters", filters)
+    profile = st.session_state.get("profile", KAROLINA_PROFILE)
+    try:
+        events = get_best_recommended_events(filters, profile, max_events)
+    except Exception as e:
+        return f"(Could not load recommendations: {e})"
+    lines = ["Here are some recommended events for you:"]
+    for i, event in enumerate(events, 1):
+        lines.append(f"{i}. {event.name} ({event.date}, {event.city or 'n/a'}, {event.category or 'n/a'})")
+        if event.description:
+            lines.append(f"   - {event.description[:120]}{'...' if len(event.description) > 120 else ''}")
+    return "\n".join(lines)
+def get_event_summaries(filters, profile, limit=10):
+    # Always use the latest filters and profile from session state for consistency
+    filters = st.session_state.get("filters", filters)
+    profile = st.session_state.get("profile", profile)
+    try:
+        events = get_best_recommended_events(filters, profile, limit)
+    except Exception:
+        return "(No events available)"
+    if not events:
+        return "(No events available)"
+    lines = []
+    for e in events:
+        line = f"- {e.name} ({e.date}, {e.city or 'n/a'}, {e.category or 'n/a'})"
+        lines.append(line)
+    return "Upcoming events include:\n" + "\n".join(lines)
+def get_profile_summary(profile):
+    return (
+        f"Age: {profile['age']}, City: {profile['city']}. "
+        f"Interests: {', '.join(profile['interests'])}."
+    )
 # ...existing code...
+
 
 import streamlit as st
 import datetime
@@ -12,9 +57,6 @@ from components.ui import (
     render_event_recommendations,
 )
 from befriends.chatbot_client import ChatbotClient, ChatbotConfig
-
-import json
-from pathlib import Path
 
 # --- Karolina's profile ---
 def load_profile(profile_path: str = "karolina_profile.json") -> dict:
@@ -48,6 +90,9 @@ def load_profile(profile_path: str = "karolina_profile.json") -> dict:
     }
 
 KAROLINA_PROFILE = load_profile()
+# Store profile in session state for consistency and possible future editing
+if "profile" not in st.session_state:
+    st.session_state["profile"] = KAROLINA_PROFILE
 
 def get_onboarding_message() -> str:
     """Return the onboarding message for new users."""
@@ -114,11 +159,29 @@ def render_chat_ui(chatbot_client):
     if prompt:
         # Show user message immediately in chat history
         st.session_state.messages.append({"role": "user", "content": prompt})
-        # After user input, get response and append
+        # Always use current filters and profile
+        filters = st.session_state.get("filters", {})
+        profile = st.session_state.get("profile", KAROLINA_PROFILE)
+        # If user asks for event suggestions, bypass LLM and use backend recommendations
+        if is_event_suggestion_request(prompt):
+            response = format_event_recommendations_for_chat(filters)
+            st.session_state.messages.append({"role": "assistant", "content": response})
+            st.rerun()
+        # Otherwise, use the LLM as before
+        event_summaries = get_event_summaries(filters, profile, limit=10)
+        system_prompt = {
+            "role": "system",
+            "content": (
+                "You are EventBot, a helpful event assistant. "
+                + get_profile_summary(profile)
+                + "\n" + event_summaries
+            )
+        }
+        messages = [system_prompt] + st.session_state.messages
         try:
             response = chatbot_client.get_response(
                 user_id="eventbot-user",
-                messages=st.session_state.messages,
+                messages=messages,
             )
         except Exception as e:
             response = f"[Error from chatbot backend: {e}]"
@@ -143,10 +206,26 @@ def render_chat_ui(chatbot_client):
     st.markdown("</div>", unsafe_allow_html=True)
     if selected_quick:
         st.session_state.messages.append({"role": "user", "content": selected_quick})
+        filters = st.session_state.get("filters", {})
+        profile = st.session_state.get("profile", KAROLINA_PROFILE)
+        if is_event_suggestion_request(selected_quick):
+            response = format_event_recommendations_for_chat(filters)
+            st.session_state.messages.append({"role": "assistant", "content": response})
+            st.rerun()
+        event_summaries = get_event_summaries(filters, profile, limit=10)
+        system_prompt = {
+            "role": "system",
+            "content": (
+                "You are EventBot, a helpful event assistant. "
+                + get_profile_summary(profile)
+                + "\n" + event_summaries
+            )
+        }
+        messages = [system_prompt] + st.session_state.messages
         try:
             response = chatbot_client.get_response(
                 user_id="eventbot-user",
-                messages=st.session_state.messages,
+                messages=messages,
             )
         except Exception as e:
             response = f"[Error from chatbot backend: {e}]"
