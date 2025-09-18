@@ -42,6 +42,7 @@ class ResponseFormatter:
                 "venue": event.venue,
                 "description": event.description,
                 "source_id": event.source_id,
+                "instagram": getattr(event, "instagram", None),
             }
             cards.append(card)
         return cards
