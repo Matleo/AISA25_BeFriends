@@ -1,0 +1,12 @@
+/* EventBot extracted styles */
+body { background: #f7f8fa !important; }
+.chat-card { background: #fff; border-radius: 18px; box-shadow: 0 2px 8px #0001; padding: 2.2em 2em 1.5em 2em; margin: 2em 0 1.5em 0; }
+.quick-reply-row { display: flex; gap: 0.5em; margin: 0.5em 0 1em 0; justify-content: flex-start; overflow-x: auto; }
+.quick-reply-row button { background: #e3f2fd; color: #1976d2; border-radius: 999px; border: 1px solid #90caf9; font-weight: 500; font-size: 1em; padding: 0.3em 1.2em; margin-bottom: 0; transition: background 0.2s, color 0.2s; box-shadow: 0 1px 4px #0001; min-width: 180px; }
+.quick-reply-row button:hover { background: #1976d2; color: #fff; }
+.harmonized-row2 { display: flex; align-items: center; gap: 1.1em; margin-bottom: 0.7em; }
+.harmonized-btn2 { background: #e3f2fd; color: #1976d2; border: 1.5px solid #90caf9; border-radius: 12px; font-size: 1.08em; font-weight: 600; padding: 0.6em 1.1em; box-shadow: 0 1px 4px #0001; transition: background 0.2s, color 0.2s; cursor: pointer; min-width: 0; }
+.harmonized-btn2:hover { background: #1976d2; color: #fff; }
+.harmonized-checkbox2 label { font-size: 1.08em; font-weight: 500; color: #333; }
+.clear-btn-icon { background: none; border: none; color: #bbb; font-size: 1.5em; cursor: pointer; transition: color 0.2s; padding: 0.1em 0.3em; border-radius: 6px; }
+.clear-btn-icon:hover { color: #e57373; background: #f9eaea; }

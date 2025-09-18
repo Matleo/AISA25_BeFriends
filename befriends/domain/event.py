@@ -28,6 +28,7 @@ class Event:
     tags: Optional[List[str]] = None
     price: Optional[str] = None
     venue: Optional[str] = None
+    instagram: Optional[str] = None
 
     def to_summary(self) -> str:
         """Return a narrative summary of the event."""
@@ -55,5 +56,6 @@ class EventModel(BaseModel):
     tags: Optional[List[str]] = None
     price: Optional[str] = None
     venue: Optional[str] = None
+    instagram: Optional[str] = None
 
     model_config = {"from_attributes": True}

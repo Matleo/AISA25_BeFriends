@@ -1,3 +1,10 @@
+import streamlit as st
+import datetime
+import json
+from pathlib import Path
+
+# --- Set 'today' for chatbot logic ---
+CHATBOT_TODAY = datetime.datetime(2025, 9, 19, 14, 0, 0)
 from components.ui import render_event_recommendations, get_best_recommended_events
 def is_event_suggestion_request(message: str) -> bool:
     keywords = [
@@ -13,12 +20,36 @@ def format_event_recommendations_for_chat(filters, max_events=5):
     filters = st.session_state.get("filters", filters)
     profile = st.session_state.get("profile", KAROLINA_PROFILE)
     try:
-        events = get_best_recommended_events(filters, profile, max_events)
+        events = get_best_recommended_events(filters, profile, max_events, today=CHATBOT_TODAY)
     except Exception as e:
         return f"(Could not load recommendations: {e})"
     lines = ["Here are some recommended events for you:"]
     for i, event in enumerate(events, 1):
-        lines.append(f"{i}. {event.name} ({event.date}, {event.city or 'n/a'}, {event.category or 'n/a'})")
+        # Try to get all relevant info
+        time = getattr(event, 'time_text', None) or (event.time_text if hasattr(event, 'time_text') else None)
+        location = getattr(event, 'location', None) or (event.location if hasattr(event, 'location') else None)
+        instagram = getattr(event, 'instagram', None) if hasattr(event, 'instagram') else None
+        # Fallback: try to get from event dict if not present as attribute
+        if not instagram and isinstance(event, dict):
+            instagram = event.get('instagram')
+        # Add weekday to date
+        date_str = str(event.date)
+        try:
+            date_obj = datetime.datetime.strptime(date_str[:10], "%Y-%m-%d")
+            weekday = date_obj.strftime("%A")
+            date_with_weekday = f"{date_str} ({weekday})"
+        except Exception:
+            date_with_weekday = date_str
+        line = f"{i}. {event.name} ({date_with_weekday}, {event.city or 'n/a'}, {event.category or 'n/a'})"
+        if time:
+            line += f" at {time}"
+        if location:
+            line += f" | {location}"
+        if instagram:
+            handle = instagram.lstrip('@')
+            url = f"https://instagram.com/{handle}"
+            line += f" | IG: [{instagram}]({url})"
+        lines.append(line)
         if event.description:
             lines.append(f"   - {event.description[:120]}{'...' if len(event.description) > 120 else ''}")
     return "\n".join(lines)
@@ -27,14 +58,35 @@ def get_event_summaries(filters, profile, limit=10):
     filters = st.session_state.get("filters", filters)
     profile = st.session_state.get("profile", profile)
     try:
-        events = get_best_recommended_events(filters, profile, limit)
+        events = get_best_recommended_events(filters, profile, limit, today=CHATBOT_TODAY)
     except Exception:
         return "(No events available)"
     if not events:
         return "(No events available)"
     lines = []
     for e in events:
-        line = f"- {e.name} ({e.date}, {e.city or 'n/a'}, {e.category or 'n/a'})"
+        time = getattr(e, 'time_text', None) or (e.time_text if hasattr(e, 'time_text') else None)
+        location = getattr(e, 'location', None) or (e.location if hasattr(e, 'location') else None)
+        instagram = getattr(e, 'instagram', None) if hasattr(e, 'instagram') else None
+        if not instagram and isinstance(e, dict):
+            instagram = e.get('instagram')
+        # Add weekday to date
+        date_str = str(e.date)
+        try:
+            date_obj = datetime.datetime.strptime(date_str[:10], "%Y-%m-%d")
+            weekday = date_obj.strftime("%A")
+            date_with_weekday = f"{date_str} ({weekday})"
+        except Exception:
+            date_with_weekday = date_str
+        line = f"- {e.name} ({date_with_weekday}, {e.city or 'n/a'}, {e.category or 'n/a'})"
+        if time:
+            line += f" at {time}"
+        if location:
+            line += f" | {location}"
+        if instagram:
+            handle = instagram.lstrip('@')
+            url = f"https://instagram.com/{handle}"
+            line += f" | IG: [{instagram}]({url})"
         lines.append(line)
     return "Upcoming events include:\n" + "\n".join(lines)
 def get_profile_summary(profile):
@@ -142,54 +194,49 @@ def get_interest_keywords() -> list:
 # --- Chat UI logic extracted for clarity ---
 def render_chat_ui(chatbot_client):
     st.markdown("""
-    <div class='chat-card' style='margin-top:2.5em; margin-bottom:2.5em; box-shadow:0 4px 24px #0001; border-radius:18px; background:#fff; padding:2.2em 2.5em 1.5em 2.5em; border:2.5px solid #d1e3f8;'>
-      <div style='display:flex; align-items:center; gap:1em; margin-bottom:0.5em;'>
-        <span style='font-size:2.1rem; font-weight:700;'>💬 Chat with EventBot</span>
+    <div class='chat-card' style='margin-top:0.5em; margin-bottom:0.5em; box-shadow:0 4px 24px #0001; border-radius:18px; background:#fff; padding:0.4em 1em 0.2em 1em; border:2.5px solid #1976d2; display:flex; flex-direction:column; gap:0;'>
+      <div style='display:flex; align-items:center; gap:0.7em; margin-bottom:0em; min-height:0;'>
+        <span style='font-size:2.1rem; font-weight:700; line-height:1;'>🤗 Meet <span style="color:#1976d2">EventMate</span></span>
         <div style='flex:1;'></div>
         <button onclick="window.location.reload()" style='background:none; border:none; cursor:pointer; font-size:1.3em; margin-left:auto;' title='Clear Conversation'>🗑️</button>
       </div>
+      <div class='chat-area-scroll' style='min-height:120px; max-height:340px; overflow-y:auto; margin-bottom:0.4em;'>
     """, unsafe_allow_html=True)
-    chat_container = st.container()
-    with chat_container:
-        st.markdown("<div class='chat-area-scroll' style='min-height:120px; max-height:340px; overflow-y:auto; margin-bottom:1.2em;'>", unsafe_allow_html=True)
+
+    if st.session_state.messages:
         for msg in st.session_state.messages:
             st.chat_message(msg["role"]).write(msg["content"])
-        st.markdown("</div>", unsafe_allow_html=True)
-    prompt = st.chat_input("Type your message…")
-    if prompt:
-        # Show user message immediately in chat history
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        # Always use current filters and profile
-        filters = st.session_state.get("filters", {})
-        profile = st.session_state.get("profile", KAROLINA_PROFILE)
-        # If user asks for event suggestions, bypass LLM and use backend recommendations
-        if is_event_suggestion_request(prompt):
-            response = format_event_recommendations_for_chat(filters)
-            st.session_state.messages.append({"role": "assistant", "content": response})
-            st.rerun()
-        # Otherwise, use the LLM as before
-        event_summaries = get_event_summaries(filters, profile, limit=10)
-        system_prompt = {
-            "role": "system",
-            "content": (
-                "You are EventBot, a helpful event assistant. "
-                + get_profile_summary(profile)
-                + "\n" + event_summaries
-            )
-        }
-        messages = [system_prompt] + st.session_state.messages
-        try:
-            response = chatbot_client.get_response(
-                user_id="eventbot-user",
-                messages=messages,
-            )
-        except Exception as e:
-            response = f"[Error from chatbot backend: {e}]"
-        st.session_state.messages.append({"role": "assistant", "content": response})
-        st.rerun()
-    # Do not rerun after every message append; only after user input
-    selected_quick = None
+        # Show spinner if chatbot is thinking
+        if st.session_state.get("chatbot_thinking", False):
+            st.markdown("""
+<div style='display:flex;align-items:center;gap:0.7em;margin:0.7em 0 0.7em 0;'>
+    <span style='font-size:1.5em;'>🤗</span>
+    <span style='font-size:1.1em;color:#1976d2;'>EventMate is thinking</span>
+    <span class='dot-flashing'></span>
+</div>
+<style>
+.dot-flashing {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  background-color: #1976d2;
+  color: #1976d2;
+  animation: dotFlashing 1s infinite linear alternate;
+  animation-delay: .5s;
+  margin-left: 0.5em;
+}
+@keyframes dotFlashing {
+  0% { opacity: 1; }
+  50%, 100% { opacity: 0.2; }
+}
+</style>
+            """, unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # If no messages, show onboarding and quick replies inside chat UI
     if not st.session_state.messages:
+        st.info("👋 Hi! I'm <b>EventMate</b>, your friendly companion for discovering fun things to do. Your preferences are set up and used only for recommendations. Looking for something fun this weekend? Just ask or see my recommendations below!", icon="🤗")
         quick_replies = [
             {"label": "What's happening this weekend?", "value": "What's happening this weekend?"},
             {"label": "Concerts nearby", "value": "Show me concerts nearby"},
@@ -199,38 +246,62 @@ def render_chat_ui(chatbot_client):
         ]
         st.markdown("<div class='quick-reply-row' style='margin-top:1.2em;'>", unsafe_allow_html=True)
         cols = st.columns(len(quick_replies))
+        selected_quick = None
         for i, chip in enumerate(quick_replies):
             if cols[i].button(chip["label"], key=f"quickreply_{i}", help=chip["value"], use_container_width=True):
                 selected_quick = chip["value"]
         st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-    if selected_quick:
-        st.session_state.messages.append({"role": "user", "content": selected_quick})
-        filters = st.session_state.get("filters", {})
-        profile = st.session_state.get("profile", KAROLINA_PROFILE)
-        if is_event_suggestion_request(selected_quick):
-            response = format_event_recommendations_for_chat(filters)
-            st.session_state.messages.append({"role": "assistant", "content": response})
+        if selected_quick:
+            st.session_state.messages.append({"role": "user", "content": selected_quick})
             st.rerun()
-        event_summaries = get_event_summaries(filters, profile, limit=10)
-        system_prompt = {
-            "role": "system",
-            "content": (
-                "You are EventBot, a helpful event assistant. "
-                + get_profile_summary(profile)
-                + "\n" + event_summaries
-            )
-        }
-        messages = [system_prompt] + st.session_state.messages
-        try:
-            response = chatbot_client.get_response(
-                user_id="eventbot-user",
-                messages=messages,
-            )
-        except Exception as e:
-            response = f"[Error from chatbot backend: {e}]"
-        st.session_state.messages.append({"role": "assistant", "content": response})
+            st.stop()
+
+    prompt = st.chat_input("Type your message for EventMate…")
+    if prompt:
+        st.session_state.messages.append({"role": "user", "content": prompt})
         st.rerun()
+        st.stop()
+
+    # After rerun, if last message is from user and not yet answered, process it
+    if st.session_state.messages:
+        last = st.session_state.messages[-1]
+        # Only trigger chatbot if previous message is from assistant (or it's the first message)
+        if last["role"] == "user" and (len(st.session_state.messages) == 1 or st.session_state.messages[-2]["role"] == "assistant"):
+            # Set chatbot_thinking flag and rerun to show spinner
+            if not st.session_state.get("chatbot_thinking", False):
+                st.session_state["chatbot_thinking"] = True
+                st.rerun()
+                st.stop()
+            filters = st.session_state.get("filters", {})
+            profile = st.session_state.get("profile", KAROLINA_PROFILE)
+            if is_event_suggestion_request(last["content"]):
+                response = format_event_recommendations_for_chat(filters)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.session_state["chatbot_thinking"] = False
+                st.rerun()
+                st.stop()
+            event_summaries = get_event_summaries(filters, profile, limit=10)
+            system_prompt = {
+                "role": "system",
+                "content": (
+                    "You are <b>EventMate</b>, a warm, approachable, and friendly companion who helps users discover fun events and activities. "
+                    + get_profile_summary(profile)
+                    + "\n" + event_summaries
+                )
+            }
+            messages = [system_prompt] + st.session_state.messages
+            try:
+                response = chatbot_client.get_response(
+                    user_id="eventbot-user",
+                    messages=messages,
+                )
+            except Exception as e:
+                response = f"[Error from chatbot backend: {e}]"
+            st.session_state.messages.append({"role": "assistant", "content": response})
+            st.session_state["chatbot_thinking"] = False
+            st.rerun()
+            st.stop()
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def main():
@@ -254,9 +325,68 @@ def main():
         st.session_state.filters["apply_filters"] = True
 
     # --- UI setup ---
-    st.set_page_config(page_title="EventBot", page_icon="🤖", layout="wide")
+    st.set_page_config(page_title="EventMate", page_icon="�", layout="wide")
     with open("static/eventbot.css") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    # --- Custom CSS for chat input visibility and card integration ---
+    st.markdown("""
+    <style>
+    /* Chat card and input integration */
+    .chat-card {
+        margin-top: 2.5em !important;
+        margin-bottom: 2.5em !important;
+        box-shadow: 0 4px 24px #0001 !important;
+        border-radius: 18px !important;
+        background: #fff !important;
+        border: 2.5px solid #1976d2 !important;
+        padding: 2.2em 2.5em 1.5em 2.5em !important;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+    .chat-card .stChatInputContainer {
+        margin-top: 0.5em !important;
+        margin-bottom: 0 !important;
+        border-radius: 1.7em !important;
+        box-shadow: 0 2px 12px #1976d233 !important;
+        background: #e3f2fd !important;
+        border: 2.5px solid #1976d2 !important;
+        padding: 0.2em 0.5em 0.2em 1em !important;
+        width: 100%;
+        align-self: flex-end;
+    }
+    textarea[data-testid="stChatInput"] {
+        font-size: 1.25rem !important;
+        border: none !important;
+        background: transparent !important;
+        color: #222 !important;
+        border-radius: 1.7em !important;
+        box-shadow: none !important;
+        padding: 1.1em 1.5em !important;
+        font-weight: 500 !important;
+        outline: none !important;
+        transition: border 0.2s, box-shadow 0.2s;
+    }
+    textarea[data-testid="stChatInput"]:focus {
+        background: #fff !important;
+    }
+    /* Send button (arrow) styling */
+    button[aria-label="Send message"] {
+        background: #1976d2 !important;
+        color: #fff !important;
+        border-radius: 50% !important;
+        width: 2.5em !important;
+        height: 2.5em !important;
+        font-size: 1.5em !important;
+        box-shadow: 0 2px 8px #1976d233 !important;
+        margin-right: 0.7em !important;
+        transition: background 0.2s;
+    }
+    button[aria-label="Send message"]:hover {
+        background: #0d47a1 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     with st.sidebar:
         st.markdown('<div class="harmonized-row2">', unsafe_allow_html=True)
         st.markdown('<div class="harmonized-checkbox2" style="flex:1;">', unsafe_allow_html=True)
@@ -273,10 +403,6 @@ def main():
         <span style='color:#1976d2; background:#e3f2fd; border-radius:999px; padding:0.3em 1.1em; font-size:1.1em; font-weight:600; margin-left:0.5em;'>your local events concierge</span>
     </div>
     """, unsafe_allow_html=True)
-
-    # Onboarding message (top, only if no chat yet)
-    if not st.session_state.messages:
-        st.info(get_onboarding_message())
 
     # Filters logic
     if st.session_state.show_sidebar:
@@ -298,7 +424,7 @@ def main():
                 "show_sidebar": st.session_state.get("show_sidebar"),
             })
 
-    # --- Split main area into two columns: Chat (left, wide) | Recommendations (right, narrow) ---
+    # --- Split main area into two columns: Chatbot (left, wide) | Recommended Events (right, narrow) ---
     col_chat, col_recs = st.columns([1.35, 0.95], gap="large")
     with col_chat:
         render_chat_ui(chatbot_client)
