@@ -7,18 +7,19 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+
+from befriends.common.config import AppConfig
+
 class ChatbotConfig:
     """Configuration for the GPT-5 chatbot client."""
 
-    def __init__(self, endpoint: Optional[str] = None, api_key: Optional[str] = None):
-        self.endpoint = endpoint or os.getenv(
-            "OPENAI_API_ENDPOINT",
-            "https://api.openai.com/v1/chat/completions"
-        )
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+    def __init__(self, config: Optional[AppConfig] = None):
+        self.config = config or AppConfig.from_env()
+        self.endpoint = self.config.openai_api_endpoint
+        self.api_key = self.config.openai_api_key
         if not self.api_key:
             raise ValueError(
-                "OPENAI_API_KEY must be set in environment or passed to ChatbotConfig."
+                "OPENAI_API_KEY must be set in environment or AppConfig."
             )
 
 
