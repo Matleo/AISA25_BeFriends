@@ -1,5 +1,19 @@
 import pytest
+
 from befriends.chatbot_client import ChatbotConfig, ChatbotClient
+from befriends.common.config import AppConfig
+
+from .conftest import MockResponse
+
+def make_app_config(endpoint, api_key):
+    """Helper to create AppConfig for tests."""
+    return AppConfig(
+        db_url="sqlite:///events.db",
+        openai_api_key=api_key,
+        openai_api_endpoint=endpoint,
+        sources=[],
+        features={},
+    )
 
 
 def test_chatbot_client_custom_endpoint_and_key(monkeypatch):
@@ -9,7 +23,8 @@ def test_chatbot_client_custom_endpoint_and_key(monkeypatch):
         assert headers["Authorization"] == "Bearer custom-key"
         return MockResponse({"choices": [{"message": {"content": "Custom endpoint reply"}}]})
     monkeypatch.setattr("requests.post", mock_post)
-    config = ChatbotConfig(endpoint="https://custom.endpoint", api_key="custom-key")
+    app_config = make_app_config("https://custom.endpoint", "custom-key")
+    config = ChatbotConfig(app_config)
     client = ChatbotClient(config)
     messages = [{"role": "user", "content": "Hi!"}]
     response = client.get_response("user42", messages)
@@ -21,7 +36,8 @@ def test_chatbot_client_error(monkeypatch):
     def mock_post(url, headers, json, timeout):
         return MockResponse({}, status_code=401)
     monkeypatch.setattr("requests.post", mock_post)
-    config = ChatbotConfig(endpoint="https://mock.endpoint", api_key="sk-test")
+    app_config = make_app_config("https://mock.endpoint", "sk-test")
+    config = ChatbotConfig(app_config)
     client = ChatbotClient(config)
     messages = [{"role": "user", "content": "Hi!"}]
     with pytest.raises(Exception):
@@ -60,10 +76,53 @@ def test_chatbot_client(monkeypatch):
             "choices": [{"message": {"content": "Hello from GPT-5!"}}]
         })
     monkeypatch.setattr("requests.post", mock_post)
-    config = ChatbotConfig(endpoint="https://mock.endpoint", api_key="sk-test")
+    app_config = make_app_config("https://mock.endpoint", "sk-test")
+    config = ChatbotConfig(app_config)
     client = ChatbotClient(config)
     messages = [
         {"role": "user", "content": "Hello!"}
     ]
     response = client.get_response("test_user", messages)
     assert response == "Hello from GPT-5!"
+
+
+# --- Additional coverage and robustness tests ---
+import requests
+
+import pytest
+
+def test_chatbot_client_timeout(monkeypatch):
+    def mock_post(*a, **k):
+        raise requests.Timeout()
+    monkeypatch.setattr("requests.post", mock_post)
+    app_config = make_app_config("https://mock.endpoint", "sk-test")
+    config = ChatbotConfig(app_config)
+    client = ChatbotClient(config)
+    with pytest.raises(RuntimeError) as exc:
+        client.get_response("user", [{"role": "user", "content": "hi"}])
+    assert "took too long" in str(exc.value)
+
+def test_chatbot_client_bad_endpoint_type():
+    app_config = make_app_config(123, "sk-test")  # Not a string
+    config = ChatbotConfig(app_config)
+    client = ChatbotClient(config)
+    with pytest.raises(ValueError):
+        client.get_response("user", [{"role": "user", "content": "hi"}])
+
+def test_chatbot_client_malformed_response(monkeypatch):
+    class BadResponse:
+        def __init__(self):
+            self.status_code = 200
+        def raise_for_status(self):
+            pass
+        def json(self):
+            raise Exception("bad json")
+    def mock_post(*a, **k):
+        return BadResponse()
+    monkeypatch.setattr("requests.post", mock_post)
+    app_config = make_app_config("https://mock.endpoint", "sk-test")
+    config = ChatbotConfig(app_config)
+    client = ChatbotClient(config)
+    with pytest.raises(RuntimeError) as exc:
+        client.get_response("user", [{"role": "user", "content": "hi"}])
+    assert "Failed to parse backend response" in str(exc.value)
