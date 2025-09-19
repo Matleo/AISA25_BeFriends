@@ -5,39 +5,35 @@ from befriends.domain.event import Event
 from datetime import date, datetime
 
 
-def make_event(**kwargs):
-    base = dict(
-        id="1",
-        name="Sample Event",
-        date=date(2025, 10, 1),
-        time_text=None,
-        location=None,
-        description=None,
-        city=None,
-        region=None,
-        source_id=None,
-        ingested_at=datetime.now(),
-        category=None,
-        tags=None,
-        price=None,
-        venue=None,
-    )
-    base.update(kwargs)
-    return Event(**base)
+import pytest
+from .conftest import make_event
 
 
-def test_to_narrative_missing_optional_fields(formatter):
-    event = make_event(name="No Details")
+
+@pytest.mark.parametrize("event_kwargs,expected", [
+    (dict(name="No Details"), "No Details"),
+    (dict(name="Concert", category="Music"), "Concert"),
+])
+def test_to_narrative_various_cases(formatter, make_event, event_kwargs, expected):
+    event = make_event(**event_kwargs)
     result = SearchResult(events=[event], total=1)
     narrative = formatter.to_narrative(result)
-    assert "No Details" in narrative
+    assert expected in narrative
 
 
-def test_to_narrative_truncates_after_5_events(formatter):
-    events = [make_event(id=str(i), name=f"Event {i}", category="Music") for i in range(7)]
-    result = SearchResult(events=events, total=7)
+
+@pytest.mark.parametrize("num_events,expected", [
+    (7, "...and 2 more."),
+    (3, None),
+])
+def test_to_narrative_truncation_cases(formatter, make_event, num_events, expected):
+    events = [make_event(id=str(i), name=f"Event {i}", category="Music") for i in range(num_events)]
+    result = SearchResult(events=events, total=num_events)
     narrative = formatter.to_narrative(result)
-    assert "...and 2 more." in narrative
+    if expected:
+        assert expected in narrative
+    else:
+        assert "...and" not in narrative
 
 
 @pytest.fixture
@@ -59,7 +55,7 @@ def test_to_cards_empty(formatter):
     assert cards == []
 
 
-def test_to_narrative_and_cards_with_events(formatter):
+def test_to_narrative_and_cards_with_events(formatter, make_event):
     event = make_event(
         name="Concert",
         time_text="20:00",

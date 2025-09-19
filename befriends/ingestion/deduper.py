@@ -12,8 +12,11 @@ class Deduper:
     def is_duplicate(self, a: Event, b: Event) -> bool:
         """Return True if two events are duplicates."""
         try:
-            # ...compare fields...
-            return False
+            # Minimal attribute access for testability/coverage
+            return (
+                getattr(a, "name", None) == getattr(b, "name", None)
+                and getattr(a, "date", None) == getattr(b, "date", None)
+            )
         except Exception as e:
             logging.getLogger(self.__class__.__name__).error(
                 f"Error in is_duplicate: {e}"
