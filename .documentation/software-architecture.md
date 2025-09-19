@@ -1,5 +1,7 @@
 # BeFriends Software Architecture Document
 
+> **Last updated:** 2025-09-19
+
 ## Table of Contents
 1. Overview
 2. High-Level Architecture Diagram
@@ -58,24 +60,35 @@ BeFriends is a modular, extensible event recommendation and chatbot platform bui
 +-------------------+
 ```
 
-## 3. Main Components
-- **Streamlit UI**: Main entry point, manages session state, chat, and event display.
-- **UI Components**: Renders event cards, filters, and chat UI. Calls services for data.
-- **Recommendation/Search Service**: Business logic for event filtering, ranking, and recommendations.
-- **Catalog Repository**: Handles all event data access (CRUD) via SQLAlchemy ORM.
-- **ResponseFormatter**: Formats event data for chat, cards, and summaries.
-- **Chatbot Client**: Integrates with OpenAI or other LLM APIs for conversational responses.
-- **Domain Models**: Dataclasses and Pydantic models for events, search queries, and results.
-- **Config**: Centralized configuration for DB, API keys, and feature flags.
 
-## 4. Data Flow
+### Component Responsibilities & Interactions
+- **[Streamlit UI](../streamlit_chatbot.py)**: Main entry point, manages session state, chat, and event display. Orchestrates user interaction and delegates logic to services/components.
+- **[UI Components](../components/ui.py)**: Renders event cards, filters, and chat UI. Stateless; receives data and formatting from services/formatter.
+- **[RecommendationService](../befriends/recommendation/service.py)**: Business logic for event filtering, ranking, and recommendations. Accepts repository and config via dependency injection.
+- **[CatalogRepository](../befriends/catalog/repository.py)**: Handles all event data access (CRUD) via SQLAlchemy ORM. Abstracts DB details from business logic.
+- **[ResponseFormatter](../befriends/response/formatter.py)**: Formats event data for chat, cards, and summaries. Used by both UI and chatbot for consistent output.
+- **[ChatbotClient](../befriends/chatbot_client.py)**: Integrates with OpenAI or other LLM APIs for conversational responses. Uses config for API keys and endpoints.
+- **[Domain Models](../befriends/domain/)**: Dataclasses and Pydantic models for events, search queries, and results. Enforces type safety and validation.
+- **[Config](../befriends/common/config.py)**: Centralized configuration for DB, API keys, and feature flags. Loads from `.env` and environment variables.
+
+
+## 4. Data Flow (Example)
 1. User interacts with Streamlit UI (chat, filters, etc.).
-2. UI calls RecommendationService with filters/profile.
-3. Service fetches events from CatalogRepository.
+2. UI calls `RecommendationService.recommend_events(filters, profile)`.
+3. Service fetches events from `CatalogRepository`.
 4. Events are filtered/ranked and returned.
-5. ResponseFormatter formats events for display.
+5. `ResponseFormatter` formats events for display (cards, chat, summaries).
 6. UI renders formatted data.
-7. For chat, user messages are sent to ChatbotClient, which returns a response.
+7. For chat, user messages are sent to `ChatbotClient`, which returns a response.
+
+**Example:**
+```python
+from befriends.recommendation.service import RecommendationService
+from befriends.catalog.repository import CatalogRepository
+repo = CatalogRepository()
+recommender = RecommendationService(repo)
+events = recommender.recommend_events(filters, profile)
+```
 
 ## 5. Key Design Principles
 - **Separation of Concerns**: UI, business logic, data access, and formatting are strictly separated.
@@ -93,11 +106,20 @@ BeFriends is a modular, extensible event recommendation and chatbot platform bui
 - **Pydantic** (validation)
 - **pytest** (testing)
 
+
 ## 7. Extensibility & Adaptability
-- Add new event sources by implementing repository interfaces.
-- Swap chatbot providers by updating ChatbotClient.
-- Add new UI features by extending components/ui.py.
-- All business logic is service-based and testable.
+- **Add new event sources:** Implement a new repository class (subclass `CatalogRepository` or follow its interface), then register it in the config or service layer.
+- **Swap chatbot providers:** Update or extend `ChatbotClient` to use a different API/provider. Inject via config.
+- **Add new UI features:** Extend or add functions in `components/ui.py` and call them from the Streamlit app.
+- **Business logic:** All logic is in services and can be tested/mocked independently.
+
+**Example: Adding a new event source**
+```python
+class MyApiRepository(CatalogRepository):
+    def list_recent(self, limit=50):
+        # Fetch from external API
+        ...
+```
 
 ## 8. Error Handling & Logging
 - All major operations have try/except blocks and log errors.
@@ -109,10 +131,45 @@ BeFriends is a modular, extensible event recommendation and chatbot platform bui
 - Integration tests for end-to-end flows.
 - Mocks for external APIs and DB.
 
+
 ## 10. Deployment & Configuration
-- All config in befriends/common/config.py or .env file.
-- Can be run locally or deployed to Streamlit Cloud.
-- Requirements managed in requirements.txt.
+- **Config:** All config in [befriends/common/config.py](../befriends/common/config.py) or `.env` file. See `.env.example` for required variables.
+- **Secrets:** API keys and DB URLs should be set via environment variables or `.env` (never hardcoded).
+- **Deployment:**
+    - Local: `streamlit run streamlit_app.py`
+    - Docker: `docker build -t aisa25_befriends . && docker run -p 8000:8000 --env-file .env aisa25_befriends`
+    - Streamlit Cloud: Upload repo, set secrets in dashboard.
+- **Requirements:** Managed in `requirements.txt`.
+
+## 11. Testing Examples & Structure
+- **Test folder:** All tests in `tests/` (unit, integration, end-to-end).
+- **Sample unit test:**
+```python
+def test_recommendation_service_returns_events():
+    repo = MockRepository()
+    service = RecommendationService(repo)
+    events = service.recommend_events({}, {}, max_events=2)
+    assert isinstance(events, list)
+```
+- **Run tests:** `pytest`
+
+## 12. Glossary
+- **Service:** A class encapsulating business logic (e.g., RecommendationService).
+- **Repository:** Data access layer, abstracts DB or API (e.g., CatalogRepository).
+- **Formatter:** Formats data for UI or chat (e.g., ResponseFormatter).
+- **Profile:** User preferences and attributes used for recommendations.
+- **Config:** Centralized settings, loaded from environment.
+
+## 13. Known Limitations & Future Work
+- Filtering and ranking logic in `RecommendationService` is basic; can be improved with ML or advanced heuristics.
+- No authentication or user management yet.
+- No admin UI for event management.
+- Limited support for recurring events and multi-language.
+- More robust error handling and logging can be added.
+
+---
+
+For a quick summary, see the project [README.md](../README.md).
 
 ---
 
