@@ -3,9 +3,11 @@ import datetime
 import json
 from pathlib import Path
 
+from components.ui import render_event_recommendations
+from befriends.recommendation.service import RecommendationService
+from befriends.catalog.repository import CatalogRepository
 # --- Set 'today' for chatbot logic ---
 CHATBOT_TODAY = datetime.datetime(2025, 9, 19, 14, 0, 0)
-from components.ui import render_event_recommendations, get_best_recommended_events
 def is_event_suggestion_request(message: str) -> bool:
     keywords = [
         "suggest events", "recommend events", "event suggestions", "show events", "what events", "any events", "find events", "empfehle events", "veranstaltungen", "vorschlagen"
@@ -16,79 +18,33 @@ def is_event_suggestion_request(message: str) -> bool:
 
 
 def format_event_recommendations_for_chat(filters, max_events=5):
-    # Always use the latest filters and profile from session state for consistency
+    """Format recommended events for chat using ResponseFormatter."""
     filters = st.session_state.get("filters", filters)
     profile = st.session_state.get("profile", KAROLINA_PROFILE)
     try:
-        events = get_best_recommended_events(filters, profile, max_events, today=CHATBOT_TODAY)
+        repo = CatalogRepository()
+        recommender = RecommendationService(repo)
+        events = recommender.recommend_events(filters, profile, max_events, today=CHATBOT_TODAY)
+        from befriends.response.formatter import ResponseFormatter
+        formatter = ResponseFormatter()
+        lines = ["Here are some recommended events for you:"]
+        lines.append(formatter.chat_event_list(events))
+        return "\n".join(lines)
     except Exception as e:
         return f"(Could not load recommendations: {e})"
-    lines = ["Here are some recommended events for you:"]
-    for i, event in enumerate(events, 1):
-        # Try to get all relevant info
-        time = getattr(event, 'time_text', None) or (event.time_text if hasattr(event, 'time_text') else None)
-        location = getattr(event, 'location', None) or (event.location if hasattr(event, 'location') else None)
-        instagram = getattr(event, 'instagram', None) if hasattr(event, 'instagram') else None
-        # Fallback: try to get from event dict if not present as attribute
-        if not instagram and isinstance(event, dict):
-            instagram = event.get('instagram')
-        # Add weekday to date
-        date_str = str(event.date)
-        try:
-            date_obj = datetime.datetime.strptime(date_str[:10], "%Y-%m-%d")
-            weekday = date_obj.strftime("%A")
-            date_with_weekday = f"{date_str} ({weekday})"
-        except Exception:
-            date_with_weekday = date_str
-        line = f"{i}. {event.name} ({date_with_weekday}, {event.city or 'n/a'}, {event.category or 'n/a'})"
-        if time:
-            line += f" at {time}"
-        if location:
-            line += f" | {location}"
-        if instagram:
-            handle = instagram.lstrip('@')
-            url = f"https://instagram.com/{handle}"
-            line += f" | IG: [{instagram}]({url})"
-        lines.append(line)
-        if event.description:
-            lines.append(f"   - {event.description[:120]}{'...' if len(event.description) > 120 else ''}")
-    return "\n".join(lines)
 def get_event_summaries(filters, profile, limit=10):
     # Always use the latest filters and profile from session state for consistency
     filters = st.session_state.get("filters", filters)
     profile = st.session_state.get("profile", profile)
     try:
-        events = get_best_recommended_events(filters, profile, limit, today=CHATBOT_TODAY)
+        repo = CatalogRepository()
+        recommender = RecommendationService(repo)
+        events = recommender.recommend_events(filters, profile, limit, today=CHATBOT_TODAY)
+        from befriends.response.formatter import ResponseFormatter
+        formatter = ResponseFormatter()
+        return formatter.chat_event_summary(events)
     except Exception:
         return "(No events available)"
-    if not events:
-        return "(No events available)"
-    lines = []
-    for e in events:
-        time = getattr(e, 'time_text', None) or (e.time_text if hasattr(e, 'time_text') else None)
-        location = getattr(e, 'location', None) or (e.location if hasattr(e, 'location') else None)
-        instagram = getattr(e, 'instagram', None) if hasattr(e, 'instagram') else None
-        if not instagram and isinstance(e, dict):
-            instagram = e.get('instagram')
-        # Add weekday to date
-        date_str = str(e.date)
-        try:
-            date_obj = datetime.datetime.strptime(date_str[:10], "%Y-%m-%d")
-            weekday = date_obj.strftime("%A")
-            date_with_weekday = f"{date_str} ({weekday})"
-        except Exception:
-            date_with_weekday = date_str
-        line = f"- {e.name} ({date_with_weekday}, {e.city or 'n/a'}, {e.category or 'n/a'})"
-        if time:
-            line += f" at {time}"
-        if location:
-            line += f" | {location}"
-        if instagram:
-            handle = instagram.lstrip('@')
-            url = f"https://instagram.com/{handle}"
-            line += f" | IG: [{instagram}]({url})"
-        lines.append(line)
-    return "Upcoming events include:\n" + "\n".join(lines)
 def get_profile_summary(profile):
     return (
         f"Age: {profile['age']}, City: {profile['city']}. "
@@ -109,6 +65,7 @@ from components.ui import (
     render_event_recommendations,
 )
 from befriends.chatbot_client import ChatbotClient, ChatbotConfig
+from befriends.common.config import AppConfig
 
 # --- Karolina's profile ---
 def load_profile(profile_path: str = "karolina_profile.json") -> dict:
@@ -162,7 +119,8 @@ def get_default_filters() -> dict:
     # Less restrictive: no date or price filter by default
     # Data-aware: if no cities in DB, set city filter to empty
     import sqlite3
-    db_path = "events.db"
+    config = AppConfig.from_env()
+    db_path = config.db_url.replace("sqlite:///", "") if config.db_url.startswith("sqlite:///") else config.db_url
     city_value = KAROLINA_PROFILE["city"]
     try:
         with sqlite3.connect(db_path) as conn:
@@ -307,7 +265,8 @@ def render_chat_ui(chatbot_client):
 def main():
     # --- Chatbot client setup ---
     try:
-        chatbot_client = ChatbotClient(ChatbotConfig())
+        config = AppConfig.from_env()
+        chatbot_client = ChatbotClient(ChatbotConfig(config))
     except Exception as e:
         st.error(f"Failed to initialize chatbot: {e}")
         return

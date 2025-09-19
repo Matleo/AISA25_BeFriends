@@ -1,3 +1,21 @@
+## BeFriends: Architecture & Quickstart
+
+### Architecture Summary
+BeFriends is a modular, extensible event recommendation and chatbot platform built with Python and Streamlit. It features:
+
+- **Streamlit UI**: Main entry point, manages session state, chat, and event display
+- **UI Components**: Renders event cards, filters, and chat UI; calls services for data
+- **Recommendation/Search Service**: Business logic for event filtering, ranking, and recommendations
+- **Catalog Repository**: Handles all event data access (CRUD) via SQLAlchemy ORM
+- **ResponseFormatter**: Formats event data for chat, cards, and summaries
+- **Chatbot Client**: Integrates with OpenAI or other LLM APIs for conversational responses
+- **Domain Models**: Dataclasses and Pydantic models for events, search queries, and results
+- **Config**: Centralized configuration for DB, API keys, and feature flags
+
+**Key Principles:** Strict separation of concerns, modularity, adaptability, and centralized configuration. All business logic is service-based and testable. See `.documentation/software-architecture.md` for full details.
+
+---
+
 ## How to use Streamlit UI
 ### Features of the Streamlit UI
 - Search and filter events by keyword, city, category, and date range

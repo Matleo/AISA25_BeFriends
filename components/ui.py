@@ -1,115 +1,19 @@
-def get_best_recommended_events(filters: dict, profile: dict, max_events: int = 6, today=None):
-    """
-    Returns a list of the best recommended events, using the same logic as the sidebar.
-    today: override for 'now' (datetime.date or datetime.datetime)
-    """
-    repo = CatalogRepository()
-    # Date filtering logic
-    date_from = filters.get("date_from") if filters else None
-    date_to = filters.get("date_to") if filters else None
-    def is_active_filter(k, v):
-        if k == "apply_filters":
-            return False
-        if k == "city" and (v is None or v == ""):
-            return False
-        if v in (None, "", 0, 0.0):
-            return False
-        return True
-    events = []
-    if filters and any(is_active_filter(k, v) for k, v in filters.items()):
-        backend_filters = {k: v for k, v in filters.items() if is_active_filter(k, v)}
-        if "city" in backend_filters and backend_filters["city"]:
-            backend_filters["city"] = backend_filters["city"].title()
-        events = repo.search_text("", filters=backend_filters)
-        if not events and "city" in backend_filters:
-            backend_filters_no_city = {k: v for k, v in backend_filters.items() if k != "city"}
-            events = repo.search_text("", filters=backend_filters_no_city)
-        if not events:
-            events = repo.list_recent(limit=100)
-    else:
-        events = repo.list_recent(limit=100)
-    user_city = profile.get("city", "").lower()
-    interests = [i.lower() for i in profile.get("interests", [])]
-    if today is None:
-        today = datetime.date.today()
-    elif isinstance(today, datetime.datetime):
-        today = today.date()
-    def event_to_dict(event):
-        if isinstance(event, dict):
-            return event
-        return {
-            "id": getattr(event, "id", None),
-            "name": getattr(event, "name", None),
-            "date": getattr(event, "date", None),
-            "time_text": getattr(event, "time_text", None),
-            "location": getattr(event, "location", None),
-            "description": getattr(event, "description", None),
-            "city": getattr(event, "city", None),
-            "region": getattr(event, "region", None),
-            "source_id": getattr(event, "source_id", None),
-            "ingested_at": getattr(event, "ingested_at", None),
-            "category": getattr(event, "category", None),
-            "tags": getattr(event, "tags", None),
-            "price": getattr(event, "price", None),
-            "venue": getattr(event, "venue", None),
-        }
-    event_pairs = [(e, event_to_dict(e)) for e in events]
-    filtered_pairs = []
-    for orig, event in event_pairs:
-        event_date = event.get("date")
-        if not event_date:
-            filtered_pairs.append((orig, event))
-            continue
-        try:
-            if isinstance(event_date, str):
-                event_date_obj = datetime.date.fromisoformat(event_date)
-            else:
-                event_date_obj = event_date
-        except Exception:
-            filtered_pairs.append((orig, event))
-            continue
-        if date_from and event_date_obj < date_from:
-            continue
-        if date_to and event_date_obj > date_to:
-            continue
-        filtered_pairs.append((orig, event))
-    def score_event(pair):
-        orig, event = pair
-        score = 0
-        city = (event.get("city") or "").lower()
-        if user_city and user_city in city:
-            score += 10
-        text_fields = " ".join(str(event.get(f, "")).lower() for f in ["name", "category", "description", "tags"])
-        interest_hits = sum(1 for kw in interests if kw in text_fields)
-        score += interest_hits * 7
-        event_date = event.get("date")
-        if isinstance(event_date, str):
-            try:
-                event_date_obj = datetime.date.fromisoformat(event_date)
-            except Exception:
-                event_date_obj = today
-        else:
-            event_date_obj = event_date
-        days_ahead = (event_date_obj - today).days
-        if days_ahead >= 0:
-            score += max(0, 5 - days_ahead // 2)
-        if event.get("tags"):
-            score += 2
-        return score
-    filtered_pairs = sorted(filtered_pairs, key=score_event, reverse=True)
-    filtered_events = [orig for orig, _ in filtered_pairs[:max_events]]
-    return filtered_events
+from befriends.recommendation.service import RecommendationService
+from befriends.catalog.repository import CatalogRepository
 import datetime
 import streamlit as st
 from typing import Dict, Any, List, Optional, Callable
 from befriends.catalog.repository import CatalogRepository
 from befriends.response.formatter import ResponseFormatter
-def render_event_recommendations(filters: dict = None, max_events: int = 6):
+def render_event_recommendations(
+    filters: Optional[Dict[str, Any]] = None,
+    max_events: int = 6
+) -> None:
     """
     Fetch and render event recommendations as cards, optionally filtered.
 
     Args:
-        filters (dict, optional): Dictionary of filter values (city, category, date_from, etc.).
+        filters (Optional[Dict[str, Any]]): Dictionary of filter values (city, category, date_from, etc.).
         max_events (int): Maximum number of events to show.
     """
     st.markdown("---")
@@ -125,15 +29,22 @@ def render_event_recommendations(filters: dict = None, max_events: int = 6):
                 profile = json.load(f)
         except Exception:
             profile = {"city": "Basel", "interests": []}
-        filtered_events = get_best_recommended_events(filters, profile, max_events)
-        cards = formatter.to_cards(type('Result', (), {'events': filtered_events, 'total': len(filtered_events)})())
+        repo = CatalogRepository()
+        recommender = RecommendationService(repo)
+        filtered_events = recommender.recommend_events(filters, profile, max_events)
+        # Wrap in a dummy SearchResult-like object for formatter
+        class DummyResult:
+            def __init__(self, events):
+                self.events = events
+                self.total = len(events)
+        cards = formatter.to_cards(DummyResult(filtered_events))
         if not cards:
             st.info("No events found for your filters.")
         for i, card in enumerate(cards):
             render_event_card(card, key_prefix=f"rec{i}_")
     except Exception as e:
-        st.info(f"Could not load event recommendations: {e}")
-def render_sidebar_filters(default_city: str = "Vienna") -> dict:
+        st.warning(f"Could not load event recommendations: {e}")
+def render_sidebar_filters(default_city: str = "Vienna") -> Dict[str, Any]:
     """
     Render sidebar filter widgets and return a dict of filter values.
 
@@ -161,7 +72,7 @@ def render_sidebar_filters(default_city: str = "Vienna") -> dict:
     }
 
 
-def render_event_card(event: Dict[str, Any], key_prefix: str = ""):
+def render_event_card(event: Dict[str, Any], key_prefix: str = "") -> None:
     """
     Render a single event as a rich card.
 
@@ -193,23 +104,26 @@ def render_event_card(event: Dict[str, Any], key_prefix: str = ""):
         handle = instagram.lstrip("@")
         url = f"https://instagram.com/{handle}"
         insta_btn = f'<a href="{url}" target="_blank" rel="noopener noreferrer"><button class="icon" title="Instagram"><span style="font-size:1.2em;">📸</span></button></a>'
-    st.markdown(f"""
-    <div class="event-card">
-        <div class="event-thumb">{thumbnail}</div>
-        <div class="event-main">
-            <div class="event-title"><b>{title}</b></div>
-            <div class="event-meta">{date} • {venue} {dist_badge}</div>
-            <div class="event-desc" style="color:#444;font-size:0.98em;margin-bottom:0.4em;">{description}</div>
-            <div class="event-pills">{category_pill} {price_pill}</div>
+    try:
+        st.markdown(f"""
+        <div class="event-card">
+            <div class="event-thumb">{thumbnail}</div>
+            <div class="event-main">
+                <div class="event-title"><b>{title}</b></div>
+                <div class="event-meta">{date} • {venue} {dist_badge}</div>
+                <div class="event-desc" style="color:#444;font-size:0.98em;margin-bottom:0.4em;">{description}</div>
+                <div class="event-pills">{category_pill} {price_pill}</div>
+            </div>
+            <div class="event-footer">
+                <button class="primary">View & Book</button>
+                <button class="icon">★</button>
+                <button class="icon">🔗</button>
+                {insta_btn}
+            </div>
         </div>
-        <div class="event-footer">
-            <button class="primary">View & Book</button>
-            <button class="icon">★</button>
-            <button class="icon">🔗</button>
-            {insta_btn}
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+    except Exception as e:
+        st.warning(f"Could not render event card: {e}")
     # Remove any accidental print or st.write of '</div>' after this line
     # Ensure there is no stray </div> after this line
 
@@ -237,7 +151,7 @@ def render_chips(
             return chip["value"]
     return None
 
-def inject_styles():
+def inject_styles() -> None:
     """
     Inject custom CSS styles for event cards, chips, and other UI elements into the Streamlit app.
     """
