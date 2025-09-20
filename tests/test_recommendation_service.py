@@ -1,4 +1,3 @@
-import pytest
 from befriends.recommendation.service import RecommendationService
 from befriends.domain.event import Event
 

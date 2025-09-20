@@ -1,12 +1,8 @@
 import pytest
 from befriends.response.formatter import ResponseFormatter
 from befriends.domain.search_models import SearchResult
-from befriends.domain.event import Event
-from datetime import date, datetime
 
 
-import pytest
-from .conftest import make_event
 
 
 

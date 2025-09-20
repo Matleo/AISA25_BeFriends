@@ -15,9 +15,6 @@ def normalizer():
     return Normalizer()
 
 
-
-import pytest
-
 @pytest.mark.parametrize("a_name,b_name,expected", [
     ("A", "B", False),
     ("A", "A", True),
@@ -48,7 +45,6 @@ def test_is_duplicate_cases(deduper, a_name, b_name, expected):
         ingested_at=datetime.now(),
     )
     assert deduper.is_duplicate(e1, e2) is expected
-
 
 
 @pytest.mark.parametrize("a_name,b_name", [
@@ -96,8 +92,6 @@ def test_normalize_and_batch(normalizer):
 
 
 # --- Additional coverage and robustness tests ---
-import pytest
-
 def test_is_duplicate_exception(monkeypatch, deduper):
     # Simulate exception in is_duplicate
     class BadEvent:

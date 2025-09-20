@@ -1,4 +1,3 @@
-import pytest
 from befriends.response.formatter import ResponseFormatter
 
 from .conftest import DummyEvent

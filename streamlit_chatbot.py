@@ -1,21 +1,25 @@
-import streamlit as st
+
 import datetime
+import streamlit as st
+
 import json
 from pathlib import Path
-
-from components.ui import render_event_recommendations
+from components.ui import render_event_recommendations, render_sidebar_filters
 from befriends.recommendation.service import RecommendationService
 from befriends.catalog.repository import CatalogRepository
+from befriends.chatbot_client import ChatbotClient, ChatbotConfig
+from befriends.common.config import AppConfig
+from befriends.response.formatter import ResponseFormatter
+
 # --- Set 'today' for chatbot logic ---
 CHATBOT_TODAY = datetime.datetime(2025, 9, 19, 14, 0, 0)
+
 def is_event_suggestion_request(message: str) -> bool:
     keywords = [
         "suggest events", "recommend events", "event suggestions", "show events", "what events", "any events", "find events", "empfehle events", "veranstaltungen", "vorschlagen"
     ]
     message_lower = message.lower()
     return any(kw in message_lower for kw in keywords)
-
-
 
 def format_event_recommendations_for_chat(filters, max_events=5):
     """Format recommended events for chat using ResponseFormatter."""
@@ -25,22 +29,21 @@ def format_event_recommendations_for_chat(filters, max_events=5):
         repo = CatalogRepository()
         recommender = RecommendationService(repo)
         events = recommender.recommend_events(filters, profile, max_events, today=CHATBOT_TODAY)
-        from befriends.response.formatter import ResponseFormatter
         formatter = ResponseFormatter()
         lines = ["Here are some recommended events for you:"]
         lines.append(formatter.chat_event_list(events))
         return "\n".join(lines)
     except Exception as e:
         return f"(Could not load recommendations: {e})"
+
 def get_event_summaries(filters, profile, limit=10):
-    # Always use the latest filters and profile from session state for consistency
+    """Get event summaries based on filters and profile."""
     filters = st.session_state.get("filters", filters)
     profile = st.session_state.get("profile", profile)
     try:
         repo = CatalogRepository()
         recommender = RecommendationService(repo)
         events = recommender.recommend_events(filters, profile, limit, today=CHATBOT_TODAY)
-        from befriends.response.formatter import ResponseFormatter
         formatter = ResponseFormatter()
         return formatter.chat_event_summary(events)
     except Exception:
@@ -53,19 +56,6 @@ def get_profile_summary(profile):
 # ...existing code...
 
 
-import streamlit as st
-import datetime
-import json
-from pathlib import Path
-from components.ui import (
-    render_event_card,
-    render_chips,
-    inject_styles,
-    render_sidebar_filters,
-    render_event_recommendations,
-)
-from befriends.chatbot_client import ChatbotClient, ChatbotConfig
-from befriends.common.config import AppConfig
 
 # --- Karolina's profile ---
 def load_profile(profile_path: str = "karolina_profile.json") -> dict:

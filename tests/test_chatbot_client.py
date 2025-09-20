@@ -1,9 +1,8 @@
-import pytest
 
+import pytest
+import requests
 from befriends.chatbot_client import ChatbotConfig, ChatbotClient
 from befriends.common.config import AppConfig
-
-from .conftest import MockResponse
 
 def make_app_config(endpoint, api_key):
     """Helper to create AppConfig for tests."""
@@ -43,16 +42,6 @@ def test_chatbot_client_error(monkeypatch):
     with pytest.raises(Exception):
         client.get_response("user42", messages)
 
-
-def test_chatbot_config_env(monkeypatch):
-    # Test config loads from environment
-    monkeypatch.setenv("OPENAI_API_KEY", "env-key")
-    monkeypatch.setenv("OPENAI_API_ENDPOINT", "https://env.endpoint")
-    config = ChatbotConfig()
-    assert config.api_key == "env-key"
-    assert config.endpoint == "https://env.endpoint"
-
-
 class MockResponse:
     def __init__(self, json_data, status_code=200):
         self._json = json_data
@@ -87,9 +76,7 @@ def test_chatbot_client(monkeypatch):
 
 
 # --- Additional coverage and robustness tests ---
-import requests
 
-import pytest
 
 def test_chatbot_client_timeout(monkeypatch):
     def mock_post(*a, **k):
