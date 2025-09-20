@@ -141,18 +141,20 @@ docker run -p 8000:8000 --env-file .env aisa25_befriends
 ```
 
 
+
 ## Test & Coverage
 ```sh
 pytest
-flake8 befriends/
+ruff check .
 coverage run -m pytest && coverage report -m
 ```
 
 **Note:** If you change the DB schema, delete `events.db` before running tests to avoid type mismatches. This is automated in CI.
 
+
 ## Contributing
 - Fork, branch, and PR as usual
-- Run tests and lint before submitting
+- Run tests, lint (ruff), and type check (mypy) before submitting
 - Follow PEP8, keep code modular
 
 ## Author

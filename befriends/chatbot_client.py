@@ -1,14 +1,10 @@
 
-import os
+from befriends.common.config import AppConfig
 import requests
 from typing import List, Dict, Optional
 import logging
 from dotenv import load_dotenv
 load_dotenv()
-
-
-
-from befriends.common.config import AppConfig
 
 class ChatbotConfig:
     """Configuration for the GPT-5 chatbot client."""

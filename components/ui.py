@@ -1,9 +1,7 @@
 from befriends.recommendation.service import RecommendationService
 from befriends.catalog.repository import CatalogRepository
-import datetime
 import streamlit as st
 from typing import Dict, Any, List, Optional, Callable
-from befriends.catalog.repository import CatalogRepository
 from befriends.response.formatter import ResponseFormatter
 def render_event_recommendations(
     filters: Optional[Dict[str, Any]] = None,
@@ -32,12 +30,9 @@ def render_event_recommendations(
         repo = CatalogRepository()
         recommender = RecommendationService(repo)
         filtered_events = recommender.recommend_events(filters, profile, max_events)
-        # Wrap in a dummy SearchResult-like object for formatter
-        class DummyResult:
-            def __init__(self, events):
-                self.events = events
-                self.total = len(events)
-        cards = formatter.to_cards(DummyResult(filtered_events))
+        # Use the actual SearchResult dataclass for formatter
+        from befriends.domain.search_models import SearchResult
+        cards = formatter.to_cards(SearchResult(events=filtered_events, total=len(filtered_events)))
         if not cards:
             st.info("No events found for your filters.")
         for i, card in enumerate(cards):
