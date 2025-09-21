@@ -1,11 +1,62 @@
+/* Chat message enhancements */
+.stChatMessage.user {
+	background: #f4f7fb !important;
+	border-radius: 14px !important;
+	margin-bottom: 0.3em !important;
+	padding: 0.2em 1.2em !important;
+}
+.stChatMessage.assistant {
+	border: 1.5px solid #e3f2fd !important;
+	border-radius: 14px !important;
+	margin-bottom: 0.3em !important;
+	padding: 0.2em 1.2em !important;
+}
+.chat-timestamp {
+	display: block;
+	font-size: 0.85em;
+	color: #b0b8c1;
+	margin-top: 0.1em;
+	margin-left: 0.2em;
+}
+/* Recommendations panel differentiation */
+.recommendations-panel {
+	background: #f4f7fb;
+	border-radius: 18px;
+	box-shadow: 0 2px 12px #0001;
+	border: 2px solid #e3f2fd;
+	padding: 1.2em 1.5em 1.2em 1.5em;
+	margin-top: 0.5em;
+}
+
+
+/* Chat card subtle contrast */
+.chat-card {
+	background: #fff;
+	border-radius: 18px;
+	box-shadow: 0 2px 8px #0001;
+	border: 2.5px solid #1976d2;
+	padding: 0.5em 2em 0.5em 2em;
+	margin: 0 !important;
+}
 /* Remove Streamlit's default blue divider and extra top margin in main area */
 .block-container { padding-top: 0 !important; margin-top: 0 !important; }
-.eventmate-header { margin-top: 0 !important; margin-bottom: 0.2em !important; padding-top: 0 !important; }
+.eventmate-header { margin-top: 0 !important; margin-bottom: 0.1em !important; padding-top: 0 !important; }
 .main > div:first-child { margin-top: 0 !important; }
 .element-container:has(.eventmate-header) { margin-top: 0 !important; }
-/* Reduce whitespace above onboarding/info box */
+/* Reduce whitespace above onboarding/info box and chat card */
+.chat-card { margin-top: 0.2em !important; }
 .stAlert {
 	margin-top: 0 !important;
+}
+
+/* Chat input field enhancements */
+.stChatInputContainer, .stTextInput, .stTextArea {
+	background: #f7f8fa !important;
+	border-radius: 999px !important;
+	border: 1.5px solid #e3f2fd !important;
+	box-shadow: 0 1px 4px #0001 !important;
+	padding: 0.2em 1.2em !important;
+	margin-top: 0.5em !important;
 }
 /* EventBot extracted styles */
 .body { background: #f7f8fa !important; }

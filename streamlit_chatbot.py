@@ -208,39 +208,56 @@ def get_interest_keywords() -> list:
 # --- Chat UI logic extracted for clarity ---
 def render_chat_ui(chatbot_client):
     logger.debug(f"[START render_chat_ui] Current session_state.messages: {st.session_state.get('messages')}")
+    # Render the header above chat area
+    with open("static/header.html") as f:
+        st.markdown(f.read(), unsafe_allow_html=True)
     render_chat_card_container_start()
-    # Removed render_chat_card_header() to avoid duplicate heading
-    st.markdown("<div class='chat-area-scroll' style='min-height:120px; max-height:340px; overflow-y:auto; margin-bottom:0.4em;'>", unsafe_allow_html=True)
-
-    if st.session_state.messages:
-        for msg in st.session_state.messages:
-            st.chat_message(msg["role"]).write(msg["content"])
-        if st.session_state.get("chatbot_thinking", False):
-            render_spinner()
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    if not st.session_state.messages:
-        # Render the header above onboarding/info box and quick replies
-        with open("static/header.html") as f:
-            st.markdown(f.read(), unsafe_allow_html=True)
+    # Always ensure the welcome message is the first and only first message
+    welcome_msg = "👋 Hi! I'm <b>EventMate</b>, your friendly companion for discovering fun things to do. Your preferences are set up and used only for recommendations. Looking for something fun this weekend? Just ask or see my recommendations below!"
+    if "messages" not in st.session_state or not st.session_state.messages:
+        st.session_state["messages"] = [{"role": "assistant", "content": welcome_msg}]
+    elif st.session_state["messages"][0].get("content") != welcome_msg:
+        st.session_state["messages"].insert(0, {"role": "assistant", "content": welcome_msg})
+    # If only the welcome message is present, show onboarding/quick replies and the welcome message as a chat bubble (not in chat history loop)
+    if len(st.session_state["messages"]) == 1:
         selected_quick = render_onboarding_and_quick_replies()
         logger.debug(f"[UI] No messages yet. Quick reply selected: {selected_quick}")
+        # Show chat input field as well, so user can choose either
+        prompt = st.chat_input("Type your message for EventMate…")
+        # If user selects a quick reply
         if selected_quick:
             logger.info(f"[UI] Appending quick reply to messages: {selected_quick}")
-            st.session_state.messages.append({"role": "user", "content": selected_quick})
-            logger.debug(f"[UI] Messages after quick reply: {st.session_state.messages}")
+            st.session_state["messages"].append({"role": "user", "content": selected_quick})
+            logger.debug(f"[UI] Messages after quick reply: {st.session_state['messages']}")
             st.rerun()
             st.stop()
-
+        # If user enters a free text prompt
+        if prompt:
+            st.session_state["messages"].append({"role": "user", "content": prompt})
+            st.rerun()
+            st.stop()
+        render_chat_card_container_end()
+        return
+    # Otherwise, display the full chat history (including welcome message, user, and assistant responses)
+    st.markdown("<div class='chat-area-scroll' style='min-height:120px; max-height:340px; overflow-y:auto; margin-bottom:0.4em;'>", unsafe_allow_html=True)
+    import datetime
+    for msg in st.session_state["messages"]:
+        with st.chat_message(msg["role"]):
+            st.write(msg["content"], unsafe_allow_html=True)
+            # Add a timestamp placeholder for future extensibility
+            st.markdown(f"<span class='chat-timestamp'>{datetime.datetime.now().strftime('%H:%M')}</span>", unsafe_allow_html=True)
+    # Render spinner after chat history, before chat input, so it appears in the chat card and is aligned
+    if st.session_state.get("chatbot_thinking", False):
+        with st.chat_message("assistant"):
+            render_spinner()
+    st.markdown("</div>", unsafe_allow_html=True)
+    # Always show the chat input field (only once per render)
     prompt = st.chat_input("Type your message for EventMate…")
     if prompt:
-        logger.info(f"[Input] User entered: {prompt}")
-        # Append user message immediately on submit, before any backend processing
-        if not st.session_state.messages or st.session_state.messages[-1].get("content") != prompt:
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            logger.debug(f"[Input] Messages after user input: {st.session_state.messages}")
-            st.rerun()
-            st.stop()
+        st.session_state["messages"].append({"role": "user", "content": prompt})
+        st.rerun()
+        st.stop()
+
     # After rerun (e.g. from quick reply), if last message is from user and not yet answered, generate assistant response
     if st.session_state.messages:
         last = st.session_state.messages[-1]
@@ -390,7 +407,7 @@ def main():
                 "show_sidebar": st.session_state.get("show_sidebar"),
             })
 
-    # --- Split main area into two columns: Chatbot (left, wide) | Recommended Events (right, narrow) ---
+    # --- Split main area into two columns with visual differentiation ---
     col_chat, col_recs = st.columns([1.35, 0.95], gap="large")
     with col_chat:
         # Render header HTML at the top of the chat column
@@ -398,8 +415,9 @@ def main():
             st.markdown(f.read(), unsafe_allow_html=True)
         render_chat_ui(chatbot_client)
     with col_recs:
-        st.markdown("<div style='margin-top:1.5em'></div>", unsafe_allow_html=True)
+        st.markdown('<div class="recommendations-panel">', unsafe_allow_html=True)
         render_event_recommendations(filters=filters)
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 # --- Run the app ---
