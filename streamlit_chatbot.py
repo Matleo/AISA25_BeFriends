@@ -220,6 +220,9 @@ def render_chat_ui(chatbot_client):
     st.markdown("</div>", unsafe_allow_html=True)
 
     if not st.session_state.messages:
+        # Render the header above onboarding/info box and quick replies
+        with open("static/header.html") as f:
+            st.markdown(f.read(), unsafe_allow_html=True)
         selected_quick = render_onboarding_and_quick_replies()
         logger.debug(f"[UI] No messages yet. Quick reply selected: {selected_quick}")
         if selected_quick:
