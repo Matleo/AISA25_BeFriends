@@ -15,7 +15,7 @@ def render_chat_card_header():
 def render_chat_card_container_start():
     st.markdown(
         """
-        <div class='chat-card' style='margin-top:0; margin-bottom:0; box-shadow:0 4px 24px #0001; border-radius:18px; background:#fff; padding:0.4em 1em 0.2em 1em; border:2.5px solid #1976d2; display:flex; flex-direction:column; gap:0;'>
+        <div class='chat-card' style='margin:0 !important; box-shadow:0 4px 24px #0001; border-radius:18px; background:#fff; padding:0.5em 2em 0.5em 2em; border:2.5px solid #1976d2; display:flex; flex-direction:column; gap:0;'>
         """,
         unsafe_allow_html=True,
     )
@@ -24,36 +24,36 @@ def render_chat_card_container_end():
     st.markdown("</div>", unsafe_allow_html=True)
 
 def render_spinner():
-    st.markdown(
-        """
-        <div style='display:flex;align-items:center;gap:0.7em;margin:0.7em 0 0.7em 0;'>
-            <span style='font-size:1.5em;'>🤗</span>
-            <span style='font-size:1.1em;color:#1976d2;'>EventMate is thinking</span>
-            <span class='dot-flashing'></span>
-        </div>
-        <style>
-        .dot-flashing {
-          position: relative;
-          width: 10px;
-          height: 10px;
-          border-radius: 5px;
-          background-color: #1976d2;
-          color: #1976d2;
-          animation: dotFlashing 1s infinite linear alternate;
-          animation-delay: .5s;
-          margin-left: 0.5em;
-        }
-        @keyframes dotFlashing {
-          0% { opacity: 1; }
-          50%, 100% { opacity: 0.2; }
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+        st.markdown(
+                """
+                <div style='display:flex;align-items:center;gap:0.7em;margin:0.1em 0 0.1em 0;'>
+                        <span style='font-size:1.5em;'>🤗</span>
+                        <span style='font-size:1.1em;color:#1976d2;'>EventMate is thinking</span>
+                        <span class='dot-flashing'></span>
+                </div>
+                <style>
+                .dot-flashing {
+                    position: relative;
+                    width: 10px;
+                    height: 10px;
+                    border-radius: 5px;
+                    background-color: #1976d2;
+                    color: #1976d2;
+                    animation: dotFlashing 1s infinite linear alternate;
+                    animation-delay: .5s;
+                    margin-left: 0.5em;
+                }
+                @keyframes dotFlashing {
+                    0% { opacity: 1; }
+                    50%, 100% { opacity: 0.2; }
+                }
+                </style>
+                """,
+                unsafe_allow_html=True,
+        )
 
 def render_onboarding_and_quick_replies():
-    st.info("👋 Hi! I'm <b>EventMate</b>, your friendly companion for discovering fun things to do. Your preferences are set up and used only for recommendations. Looking for something fun this weekend? Just ask or see my recommendations below!", icon="🤗")
+    st.chat_message("assistant").write("👋 Hi! I'm <b>EventMate</b>, your friendly companion for discovering fun things to do. Your preferences are set up and used only for recommendations. Looking for something fun this weekend? Just ask or see my recommendations below!", unsafe_allow_html=True)
     quick_replies = [
         {"label": "What's happening this weekend?", "value": "What's happening this weekend?"},
         {"label": "Concerts nearby", "value": "Show me concerts nearby"},

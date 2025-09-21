@@ -1,3 +1,10 @@
+👋 Hi! I'm <b>EventMate</b>, your friendly companion for discovering fun things to do. Your preferences are set up and used only for recommendations. Looking for something fun this weekend? Just ask or see my recommendations below!
+
+
+
+
+
+
 # Changelog
 
 ## [0.2.0] - 2025-09-19
