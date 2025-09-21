@@ -1,7 +1,16 @@
+/* Remove Streamlit's default blue divider and extra top margin in main area */
+.block-container { padding-top: 0 !important; margin-top: 0 !important; }
+.eventmate-header { margin-top: 0 !important; margin-bottom: 0.2em !important; padding-top: 0 !important; }
+.main > div:first-child { margin-top: 0 !important; }
+.element-container:has(.eventmate-header) { margin-top: 0 !important; }
+/* Reduce whitespace above onboarding/info box */
+.stAlert {
+	margin-top: 0 !important;
+}
 /* EventBot extracted styles */
-body { background: #f7f8fa !important; }
-.chat-card { background: #fff; border-radius: 18px; box-shadow: 0 2px 8px #0001; padding: 2.2em 2em 1.5em 2em; margin: 2em 0 1.5em 0; }
-.quick-reply-row { display: flex; gap: 0.5em; margin: 0.5em 0 1em 0; justify-content: flex-start; overflow-x: auto; }
+.body { background: #f7f8fa !important; }
+.chat-card { background: #fff; border-radius: 18px; box-shadow: 0 2px 8px #0001; padding: 0.5em 2em 0.5em 2em; margin: 0 !important; }
+.quick-reply-row { display: flex; gap: 0.5em; margin: 0 !important; justify-content: flex-start; overflow-x: auto; }
 .quick-reply-row button { background: #e3f2fd; color: #1976d2; border-radius: 999px; border: 1px solid #90caf9; font-weight: 500; font-size: 1em; padding: 0.3em 1.2em; margin-bottom: 0; transition: background 0.2s, color 0.2s; box-shadow: 0 1px 4px #0001; min-width: 180px; }
 .quick-reply-row button:hover { background: #1976d2; color: #fff; }
 .harmonized-row2 { display: flex; align-items: center; gap: 1.1em; margin-bottom: 0.7em; }

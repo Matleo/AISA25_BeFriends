@@ -33,16 +33,18 @@ class RecommendationService:
         filters: Dict[str, Any],
         profile: Dict[str, Any],
         max_events: int = 6,
-        today: Optional[datetime.date] = None
+        today: Optional[datetime.date] = None,
+        text: Optional[str] = None
     ) -> List[Event]:
         """
-        Recommend events based on filters and user profile.
+        Recommend events based on filters, user profile, and optional free-text query.
 
         Args:
             filters (Dict[str, Any]): Filtering options (city, category, etc.)
             profile (Dict[str, Any]): User profile (city, interests, etc.)
             max_events (int): Max number of events to return
             today (Optional[datetime.date]): Override for 'now'. Defaults to today.
+            text (Optional[str]): Free-text search query (for chatbot)
 
         Returns:
             List[Event]: Recommended events
@@ -50,9 +52,12 @@ class RecommendationService:
         if today is None:
             today = datetime.date.today()
         try:
-            events = self.repository.list_recent(limit=100)
-            # TODO: Add filtering and ranking logic here, using filters/profile
-            # For now, just return the most recent events
+            # If a free-text query is provided, use full-text search
+            if text:
+                events = self.repository.search_text(text, filters)
+                return events[:max_events]
+            # Otherwise, use filters/profile for recommendations
+            events = self.repository.search_text("", filters)
             return events[:max_events]
         except Exception as e:
             self.logger.error(f"Error in recommend_events: {e}")

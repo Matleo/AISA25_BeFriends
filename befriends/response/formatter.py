@@ -18,10 +18,10 @@ class ResponseFormatter:
         """
         lines = []
         for i, event in enumerate(events, 1):
-            time = getattr(event, 'time_text', None) or (event.get('time_text') if isinstance(event, dict) else None)
-            location = getattr(event, 'location', None) or (event.get('location') if isinstance(event, dict) else None)
-            instagram = getattr(event, 'instagram', None) if hasattr(event, 'instagram') else (event.get('instagram') if isinstance(event, dict) else None)
-            date_str = str(getattr(event, 'date', None) or (event.get('date') if isinstance(event, dict) else ''))
+            time = getattr(event, 'time_text', None)
+            location = getattr(event, 'location', None)
+            instagram = getattr(event, 'instagram', None)
+            date_str = str(getattr(event, 'date', None))
             if with_weekday:
                 try:
                     import datetime
@@ -32,7 +32,10 @@ class ResponseFormatter:
                     date_with_weekday = date_str
             else:
                 date_with_weekday = date_str
-            line = f"{i}. {getattr(event, 'name', event.get('name', ''))} ({date_with_weekday}, {getattr(event, 'city', event.get('city', 'n/a'))}, {getattr(event, 'category', event.get('category', 'n/a'))})"
+            name = getattr(event, 'name', '')
+            city = getattr(event, 'city', 'n/a')
+            category = getattr(event, 'category', 'n/a')
+            line = f"{i}. {name} ({date_with_weekday}, {city}, {category})"
             if time:
                 line += f" at {time}"
             if location:
@@ -42,7 +45,7 @@ class ResponseFormatter:
                 url = f"https://instagram.com/{handle}"
                 line += f" | IG: [{instagram}]({url})"
             lines.append(line)
-            desc = getattr(event, 'description', None) or (event.get('description') if isinstance(event, dict) else None)
+            desc = getattr(event, 'description', None)
             if desc:
                 lines.append(f"   - {desc[:120]}{'...' if len(desc) > 120 else ''}")
         return "\n".join(lines)
@@ -59,10 +62,10 @@ class ResponseFormatter:
             return "(No events available)"
         lines = []
         for e in events:
-            time = getattr(e, 'time_text', None) or (e.get('time_text') if isinstance(e, dict) else None)
-            location = getattr(e, 'location', None) or (e.get('location') if isinstance(e, dict) else None)
-            instagram = getattr(e, 'instagram', None) if hasattr(e, 'instagram') else (e.get('instagram') if isinstance(e, dict) else None)
-            date_str = str(getattr(e, 'date', None) or (e.get('date') if isinstance(e, dict) else ''))
+            time = getattr(e, 'time_text', None)
+            location = getattr(e, 'location', None)
+            instagram = getattr(e, 'instagram', None)
+            date_str = str(getattr(e, 'date', None))
             try:
                 import datetime
                 date_obj = datetime.datetime.strptime(date_str[:10], "%Y-%m-%d")
@@ -70,7 +73,10 @@ class ResponseFormatter:
                 date_with_weekday = f"{date_str} ({weekday})"
             except Exception:
                 date_with_weekday = date_str
-            line = f"- {getattr(e, 'name', e.get('name', ''))} ({date_with_weekday}, {getattr(e, 'city', e.get('city', 'n/a'))}, {getattr(e, 'category', e.get('category', 'n/a'))})"
+            name = getattr(e, 'name', '')
+            city = getattr(e, 'city', 'n/a')
+            category = getattr(e, 'category', 'n/a')
+            line = f"- {name} ({date_with_weekday}, {city}, {category})"
             if time:
                 line += f" at {time}"
             if location:
