@@ -1,3 +1,19 @@
+# Changelog
+
+## [0.2.1] - 2025-09-22
+### Fixed
+- Fixed: User chat input and quick replies now always store and display only plain text, never HTML or code blocks.
+- Fixed: Assistant responses are stripped of HTML before display, preventing raw HTML/code block artifacts in chat.
+- Fixed: Chatbot response and "EventBot is thinking" spinner now reliably display in correct order after user input.
+
+### Changed
+- Improved chat UI logic for Streamlit rerun model: user messages, spinner, and bot responses are shown in correct sequence.
+
+### Open Points
+- User chat input still sometimes displays as code block if backend or other logic returns HTML—needs further backend sanitization.
+- Review all message formatting for edge cases (Markdown, emoji, etc.).
+- Test with more diverse user/assistant message content.
+
 👋 Hi! I'm <b>EventMate</b>, your friendly companion for discovering fun things to do. Your preferences are set up and used only for recommendations. Looking for something fun this weekend? Just ask or see my recommendations below!
 
 
