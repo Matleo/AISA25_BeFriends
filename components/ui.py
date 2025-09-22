@@ -15,7 +15,7 @@ def render_event_recommendations(
         filters (Optional[Dict[str, Any]]): Dictionary of filter values (city, category, date_from, etc.).
         max_events (int): Maximum number of events to show.
     """
-    st.markdown("---")
+    # st.markdown("---")
     st.markdown("##### Recommended for you")
     import json
     formatter = ResponseFormatter()

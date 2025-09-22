@@ -213,13 +213,11 @@ def render_chat_ui(chatbot_client):
                 "",
                 key="chat_input_box",
                 placeholder="Ask me anything about events, concerts, or activities...",
-                help="Type your message and press Enter or click the send icon",
                 label_visibility="collapsed"
             )
         with cols[1]:
             send = st.form_submit_button(
                 label="Send",
-                help="Send message",
                 use_container_width=True
             )
         if send:
@@ -230,9 +228,6 @@ def render_chat_ui(chatbot_client):
                 st.rerun()
             else:
                 st.warning("Please enter a message before sending.")
-    # Spinner feedback if sending
-    if st.session_state.get("is_typing", False):
-        st.markdown("<div style='margin-top:0.5em;'><span class='chat-input-spinner'>⏳ Sending...</span></div>", unsafe_allow_html=True)
     render_chat_card_container_end()
 
 def append_message(role, content):
@@ -342,8 +337,6 @@ def main():
             # Spinner state, not needed in logs
             st.session_state["spinner_shown"] = True
             render_chat_ui(chatbot_client)
-            from components.chat_ui import render_spinner
-            render_spinner()
             st.rerun()
 
         # Step 3: If is_typing and spinner was shown, generate assistant response

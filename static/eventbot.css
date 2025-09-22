@@ -1,3 +1,27 @@
+.eventmate-subheading {
+	font-size: 1.18rem;
+	font-weight: 500;
+	color: #1976d2;
+	background: linear-gradient(90deg, #e3f2fd 60%, #fff 100%);
+	border-radius: 12px;
+	padding: 0.22em 1.1em 0.22em 0.9em;
+	box-shadow: 0 1px 6px #1976d211;
+	letter-spacing: -0.5px;
+	margin-left: 2px;
+	margin-top: 0.1em;
+	display: inline-block;
+}
+/* Chat input focus and spinner feedback */
+.stTextInput:focus {
+	border: 2px solid #1976d2 !important;
+	box-shadow: 0 0 0 2px #90caf9 !important;
+}
+.chat-input-spinner {
+	color: #1976d2;
+	font-size: 1.1em;
+	font-weight: 500;
+	margin-left: 0.5em;
+}
 /* Chat message enhancements */
 .stChatMessage.user {
 	background: #f4f7fb !important;
