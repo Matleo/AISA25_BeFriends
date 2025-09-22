@@ -184,12 +184,55 @@ def render_chat_ui(chatbot_client):
                 st.rerun()
 
     # Standard Streamlit chat input
-    st.markdown("<div style='margin-top:1.5em;'></div>", unsafe_allow_html=True)
-    user_input = st.text_input("Type your message...", value="", key="chat_input_box")
-    send = st.button("Send", key="send_button")
-    if send and user_input.strip():
-        st.session_state["pending_user_message"] = user_input.strip()
-        st.rerun()
+    st.markdown("""
+    <style>
+    .chat-input-bar { display: flex; align-items: center; background: #f7f8fa; border-radius: 2em; box-shadow: 0 2px 8px #0001; border: 1.5px solid #e3f2fd; padding: 0.1em 1.2em 0.1em 1.2em; margin: 0.5em 0 0.2em 0; min-height: 3.2em; }
+    .chat-input-bar input { flex: 1; border: none; background: transparent; outline: none; font-size: 1.08em; padding: 0.6em 0; min-width: 0; }
+    .chat-input-bar input:focus { outline: none; }
+    .chat-send-btn { background: #1976d2; border: none; border-radius: 50%; width: 2.4em; height: 2.4em; display: flex; align-items: center; justify-content: center; margin-left: 0.4em; transition: background 0.2s, box-shadow 0.2s; box-shadow: 0 2px 8px #1976d220; cursor: pointer; }
+    .chat-send-btn:disabled { background: #b0b8c1; cursor: not-allowed; }
+    .chat-send-btn:hover:not(:disabled) { background: #1565c0; box-shadow: 0 4px 12px #1976d240; }
+    .chat-send-btn svg { color: #fff; font-size: 1.15em; }
+    .chat-mic-btn { background: none; border: none; margin-left: 0.2em; color: #b0b8c1; font-size: 1.35em; cursor: not-allowed; transition: color 0.2s; padding: 0; }
+    .chat-mic-btn[title]:hover { color: #1976d2; }
+    </style>
+    """, unsafe_allow_html=True)
+    import streamlit.components.v1 as components
+    # Use a form to allow Enter-to-send
+    import streamlit.components.v1 as components
+    # Use a form to allow Enter-to-send
+    # Clear input if flag is set, before widget is rendered
+    if st.session_state.get("clear_input", False):
+        st.session_state["chat_input_box"] = ""
+        st.session_state["clear_input"] = False
+
+    with st.form(key="chat_input_form_unique"):
+        cols = st.columns([10,1])
+        with cols[0]:
+            user_input = st.text_input(
+                "",
+                key="chat_input_box",
+                placeholder="Ask me anything about events, concerts, or activities...",
+                help="Type your message and press Enter or click the send icon",
+                label_visibility="collapsed"
+            )
+        with cols[1]:
+            send = st.form_submit_button(
+                label="Send",
+                help="Send message",
+                use_container_width=True
+            )
+        if send:
+            if user_input.strip():
+                st.session_state["pending_user_message"] = user_input.strip()
+                st.session_state["clear_input"] = True
+                st.write("DEBUG: Form submitted, message sent.")
+                st.rerun()
+            else:
+                st.warning("Please enter a message before sending.")
+    # Spinner feedback if sending
+    if st.session_state.get("is_typing", False):
+        st.markdown("<div style='margin-top:0.5em;'><span class='chat-input-spinner'>⏳ Sending...</span></div>", unsafe_allow_html=True)
     render_chat_card_container_end()
 
 def append_message(role, content):
