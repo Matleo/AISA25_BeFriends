@@ -58,7 +58,107 @@
 	padding: 0.2em 1.2em !important;
 	margin-top: 0.5em !important;
 }
-/* EventBot extracted styles */
+/* Event card improvements */
+.event-card {
+	background: #fff;
+	border-radius: 18px;
+	box-shadow: 0 2px 12px #0001;
+	border: 1.5px solid #e3f2fd;
+	padding: 1.2em 1.5em 1.2em 1.5em;
+	margin-bottom: 1.2em;
+	display: flex;
+	flex-direction: column;
+	gap: 0.7em;
+	transition: box-shadow .2s, border-color .2s;
+}
+.event-card:hover {
+	box-shadow: 0 4px 24px #1976d233;
+	border-color: #1976d2;
+}
+.event-thumb {
+	font-size: 2.3rem;
+	margin-bottom: 0.2em;
+	align-self: flex-start;
+}
+.event-main {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2em;
+}
+.event-title {
+	font-size: 1.15rem;
+	font-weight: 600;
+	margin-bottom: 0.1em;
+}
+.event-meta {
+	color: #5a6a7a;
+	font-size: 0.97rem;
+	margin-bottom: 0.2em;
+}
+.event-desc {
+	color: #444;
+	font-size: 0.98em;
+	margin-bottom: 0.3em;
+}
+.event-pills {
+	margin-bottom: 0.2em;
+}
+.pill {
+	display: inline-block;
+	border-radius: 999px;
+	padding: 0.2em 0.8em;
+	font-size: 0.85em;
+	margin-right: 0.3em;
+	background: #e0f7fa;
+	color: #00796b;
+}
+.pill.price { background: #e3e3e3; color: #222; }
+.pill.category.music { background: #e0f7fa; color: #00796b; }
+.pill.category.sports { background: #fff3e0; color: #ef6c00; }
+.pill.category.food\ \&\ drink { background: #fce4ec; color: #ad1457; }
+.pill.category.theater { background: #ede7f6; color: #5e35b1; }
+.pill.category.comedy { background: #fffde7; color: #fbc02d; }
+.pill.category.family { background: #e8f5e9; color: #388e3c; }
+.pill.category.outdoors { background: #e0f2f1; color: #00695c; }
+.pill.category.workshops { background: #f3e5f5; color: #8e24aa; }
+.distance-badge {
+	background: #e0e0e0;
+	color: #333;
+	border-radius: 8px;
+	padding: 0.1em 0.5em;
+	font-size: 0.8em;
+	margin-left: 0.5em;
+}
+.event-footer {
+	display: flex;
+	gap: 0.5em;
+	margin-top: 0.2em;
+}
+.event-footer .primary {
+	background: #1976d2;
+	color: #fff;
+	border: none;
+	border-radius: 8px;
+	padding: 0.4em 1.2em;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background .2s;
+}
+.event-footer .primary:hover {
+	background: #125ea2;
+}
+.event-footer .icon {
+	background: none;
+	border: none;
+	font-size: 1.2em;
+	cursor: pointer;
+	padding: 0.3em 0.7em;
+	border-radius: 8px;
+	transition: background .2s;
+}
+.event-footer .icon:hover {
+	background: #e3f2fd;
+}
 .body { background: #f7f8fa !important; }
 .chat-card { background: #fff; border-radius: 18px; box-shadow: 0 2px 8px #0001; padding: 0.5em 2em 0.5em 2em; margin: 0 !important; }
 .quick-reply-row { display: flex; gap: 0.5em; margin: 0 !important; justify-content: flex-start; overflow-x: auto; }

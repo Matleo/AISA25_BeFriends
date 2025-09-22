@@ -1,8 +1,72 @@
-## BeFriends: Architecture & Quickstart
+befriends/   # Backend code (API, logic, models)
+## BeFriends: Event Recommendation Platform
 
-### Architecture Summary
-BeFriends is a modular, extensible event recommendation and chatbot platform built with Python and Streamlit. It features:
+**A modular event search and chatbot platform with FastAPI backend and Streamlit frontend.**
 
+### Features
+- Modern event search API (fuzzy, filters, recency)
+- Streamlit UI for chat and event discovery
+- Automated data import (CSV, HTML, API)
+- SQLite by default, easy to configure
+- Modular, testable, production-ready code
+- Full test suite, CI/CD, Docker support
+
+### Usage
+
+**Backend (FastAPI):**
+```sh
+uvicorn befriends.app:create_app --host 0.0.0.0 --port 8000 --reload --factory
+```
+API docs: [Swagger](http://localhost:8000/docs) | [ReDoc](http://localhost:8000/redoc)
+
+**Frontend (Streamlit):**
+```sh
+streamlit run streamlit_app.py
+```
+Edit `API_URL` in `streamlit_app.py` to change backend address.
+
+**Docker:**
+```sh
+docker build -t aisa25_befriends .
+docker run -p 8000:8000 --env-file .env aisa25_befriends
+```
+
+**Data Import:**
+Place CSVs in `befriends/data/` and run:
+```sh
+curl -X POST "http://localhost:8000/admin/reingest"
+```
+
+**Testing & Linting:**
+```sh
+pytest
+ruff check .
+coverage run -m pytest && coverage report -m
+```
+
+### API
+- `GET /search` — Search events (query, filters)
+- `POST /admin/reingest` — Re-import all sources
+- `POST /admin/import-csv?password=import123` — Import CSV (admin)
+
+### Project Structure
+```
+befriends/   # Backend code (API, logic, models)
+components/  # UI components
+static/      # CSS, HTML assets
+scripts/     # Data import/utilities
+tests/       # Test suite
+requirements.txt
+.env.example
+```
+
+### Notes
+- DB: SQLite by default (`events.db`). Delete if schema changes.
+- All business logic is modular and testable.
+- For missing dependencies: `pip install -r requirements.txt`
+
+### License
+MIT
 - **Streamlit UI**: Main entry point, manages session state, chat, and event display
 - **UI Components**: Renders event cards, filters, and chat UI; calls services for data
 - **Recommendation/Search Service**: Business logic for event filtering, ranking, and recommendations

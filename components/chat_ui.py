@@ -1,4 +1,6 @@
 import streamlit as st
+import html
+from typing import Optional
 
 def render_chat_card_header():
     st.markdown(
@@ -69,3 +71,30 @@ def render_onboarding_and_quick_replies():
             selected_quick = chip["value"]
     st.markdown("</div>", unsafe_allow_html=True)
     return selected_quick
+
+def strip_html(text: Optional[str]) -> str:
+    if not isinstance(text, str):
+        return ""
+    import re
+    return re.sub(r'<[^>]+>', '', html.unescape(text))
+
+def render_chat_bubble(role: str, content: str, timestamp: str, show_label: bool) -> str:
+    """
+    Returns HTML for a single chat bubble.
+    """
+    avatar = "🧑" if role == "user" else "🤖"
+    label = "You" if role == "user" else "EventMate"
+    avatar_html = f'<div class="avatar">{avatar}</div>' if show_label else ''
+    label_html = f'<div class="sender-label">{label}</div>' if show_label else ''
+    content = strip_html(content)
+    bubble = f'''
+<div class='chat-row {role}'>
+    {avatar_html}
+    <div class='bubble-group'>
+        {label_html}
+        <div class='chat-bubble {role}'>{content}</div>
+        <div class='timestamp'>{timestamp}</div>
+    </div>
+</div>
+    '''
+    return bubble
