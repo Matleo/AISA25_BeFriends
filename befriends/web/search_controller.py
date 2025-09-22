@@ -31,12 +31,11 @@ class SearchController:
             # Build SearchQuery from query_text and all supported filters
             query = SearchQuery(
                 text=query_text,
-                date_from=filters.get("date_from"),
-                date_to=filters.get("date_to"),
-                city=filters.get("city"),
+                start_datetime_from=filters.get("start_datetime_from"),
+                start_datetime_to=filters.get("start_datetime_to"),
                 region=filters.get("region"),
-                category=filters.get("category"),
-                tags=filters.get("tags"),
+                event_type=filters.get("event_type"),
+                dance_style=filters.get("dance_style"),
                 price_min=filters.get("price_min"),
                 price_max=filters.get("price_max"),
             )

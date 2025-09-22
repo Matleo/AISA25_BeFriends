@@ -15,52 +15,52 @@ class RelevancePolicy:
         """
         def score(event: Event) -> float:
             s = 0.0
+            from datetime import datetime, date as dt_date
+            today = datetime.now().date()
             # Recency: prioritize future events, then most recent
-            from datetime import date as dt_date
-
-            today = dt_date.today()
-            if hasattr(event, "date") and event.date is not None:
-                if event.date >= today:
-                    s -= (event.date - today).days * 0.5  # future events: less penalty
+            if hasattr(event, "start_datetime") and event.start_datetime is not None:
+                event_date = event.start_datetime.date() if isinstance(event.start_datetime, datetime) else event.start_datetime
+                if event_date >= today:
+                    s -= (event_date - today).days * 0.5  # future events: less penalty
                 else:
-                    s += (today - event.date).days * 2  # past events: strong penalty
-            # Keyword in name/category/description/tags
+                    s += (today - event_date).days * 2  # past events: strong penalty
+            # Keyword in event_name/event_type/date_description/dance_style
             text = (query.text or "").lower()
             if text:
-                if text in (event.name or "").lower():
+                if text in (event.event_name or "").lower():
                     s -= 20
-                if text in (event.category or "").lower():
+                if text in (event.event_type or "").lower():
                     s -= 10
-                if text in (event.description or "").lower():
+                if text in (event.date_description or "").lower():
                     s -= 5
-                if event.tags and any(text in (t or "").lower() for t in event.tags):
+                if text in (event.dance_style or "").lower():
                     s -= 5
-            # Category exact match
+            # Event type exact match
             if (
-                query.category
-                and event.category
-                and query.category.lower() == event.category.lower()
+                hasattr(query, "event_type")
+                and query.event_type
+                and event.event_type
+                and query.event_type.lower() == event.event_type.lower()
             ):
                 s -= 5
-            # Tag match
-            if query.tags and event.tags:
-                for tag in query.tags:
-                    if any(tag.lower() in (t or "").lower() for t in event.tags):
-                        s -= 3
+            # Dance style match
+            if hasattr(query, "dance_style") and query.dance_style and event.dance_style:
+                if query.dance_style.lower() in (event.dance_style or "").lower():
+                    s -= 3
             # Price proximity (if price filter used)
-            if (query.price_min or query.price_max) and event.price:
+            if (hasattr(query, "price_min") or hasattr(query, "price_max")) and (event.price_min is not None or event.price_max is not None):
                 try:
-                    price_val = float(str(event.price).split()[0].replace(",", "."))
-                    if query.price_min:
+                    price_val = float(event.price_min) if event.price_min is not None else float(event.price_max)
+                    if hasattr(query, "price_min") and query.price_min:
                         s += abs(price_val - query.price_min)
-                    if query.price_max:
+                    if hasattr(query, "price_max") and query.price_max:
                         s += abs(price_val - query.price_max)
                 except Exception:
                     pass
             # Date range filter match
-            if query.date_from and event.date and event.date < query.date_from:
+            if hasattr(query, "start_datetime_from") and query.start_datetime_from and event.start_datetime and event.start_datetime < query.start_datetime_from:
                 s += 10
-            if query.date_to and event.date and event.date > query.date_to:
+            if hasattr(query, "start_datetime_to") and query.start_datetime_to and event.start_datetime and event.start_datetime > query.start_datetime_to:
                 s += 10
             return s  # Lower score = higher rank
         return sorted(events, key=score)

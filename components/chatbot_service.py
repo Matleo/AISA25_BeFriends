@@ -46,14 +46,73 @@ class ChatbotService:
         return "other"
 
     def get_response(self, user_input, messages, filters, intent, today, repo, recommender, events_to_json, get_profile_summary):
+        # Intercept 'what is today' and similar queries to always return the real current date
+        import re, datetime
+        today_patterns = [
+            r"what\s+is\s+today\??",
+            r"heute\??$",
+            r"welches datum ist heute\??",
+            r"today\??$",
+            r"was ist heute\??"
+        ]
+        user_input_clean = user_input.strip().lower()
+        if any(re.fullmatch(pat, user_input_clean) for pat in today_patterns):
+            # Always use the real current date, not the 'today' argument
+            real_today = datetime.datetime.now()
+            date_str = real_today.strftime("%B %d, %Y")
+            return f"Today is {date_str}. Is there anything specific you're looking for or any event you'd like to know more about happening today? Feel free to ask!"
         logger = logging.getLogger("chatbot_service")
         filters = copy.deepcopy(filters)
+        # --- Ensure user profile city is mapped to region filter if region is not set ---
+        if self.profile and isinstance(self.profile, dict):
+            if not filters.get("region"):
+                city = self.profile.get("city")
+                if city:
+                    filters["region"] = city
         if intent == "greeting":
             return "Hey! Schön, von dir zu hören 😊 Wie kann ich dir heute helfen? Suchst du nach Events oder möchtest du einfach plaudern?"
         elif intent == "smalltalk":
             return "Mir geht's super, danke der Nachfrage! Und wie läuft's bei dir? 😊"
         if intent == "event_query" or (len(messages) == 1 and is_event_suggestion_request(user_input)):
-            if not filters.get("date_from"):
+            import datetime
+            user_input_lc = user_input.strip().lower()
+            # Detect 'this week' and set date_from/date_to accordingly
+            if ("this week" in user_input_lc) or ("diese woche" in user_input_lc):
+                today_real = datetime.datetime.now().date()
+                start_of_week = today_real - datetime.timedelta(days=today_real.weekday())
+                end_of_week = start_of_week + datetime.timedelta(days=6)
+                filters["date_from"] = start_of_week
+                filters["date_to"] = end_of_week
+            # Detect 'this weekend' and set date_from/date_to to Saturday and Sunday
+            elif ("this weekend" in user_input_lc) or ("dieses wochenende" in user_input_lc):
+                today_real = datetime.datetime.now().date()
+                # Saturday = 5, Sunday = 6
+                days_until_saturday = (5 - today_real.weekday()) % 7
+                saturday = today_real + datetime.timedelta(days=days_until_saturday)
+                sunday = saturday + datetime.timedelta(days=1)
+                filters["date_from"] = saturday
+                filters["date_to"] = sunday
+            # Detect 'next few days' and set date_from/date_to to today and today+3
+            elif ("next few days" in user_input_lc) or ("kommenden tage" in user_input_lc):
+                today_real = datetime.datetime.now().date()
+                filters["date_from"] = today_real
+                filters["date_to"] = today_real + datetime.timedelta(days=3)
+            # Detect 'this month' and set date_from/date_to to first and last day of month
+            elif ("this month" in user_input_lc) or ("diesen monat" in user_input_lc):
+                today_real = datetime.datetime.now().date()
+                start = today_real.replace(day=1)
+                if today_real.month == 12:
+                    end = today_real.replace(year=today_real.year+1, month=1, day=1) - datetime.timedelta(days=1)
+                else:
+                    end = today_real.replace(month=today_real.month+1, day=1) - datetime.timedelta(days=1)
+                filters["date_from"] = start
+                filters["date_to"] = end
+            # Detect 'tonight' and set date_from/date_to to today
+            elif ("tonight" in user_input_lc) or ("heute abend" in user_input_lc):
+                today_real = datetime.datetime.now().date()
+                filters["date_from"] = today_real
+                filters["date_to"] = today_real
+            elif not filters.get("date_from"):
                 filters["date_from"] = today.date()
             if filters.get("city") and not any(e for e in repo.search_text("", filters)):
                 filters["city"] = ""

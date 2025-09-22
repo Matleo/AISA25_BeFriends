@@ -9,32 +9,29 @@ from pydantic import BaseModel
 from .event import Event, EventModel
 
 
+
 @dataclass(frozen=True)
 class SearchQuery:
-    """Encapsulates search parameters for events."""
+    """Encapsulates search parameters for events (new schema)."""
 
     text: str
-    date_from: Optional[date]
-    date_to: Optional[date]
-    city: Optional[str]
+    start_datetime_from: Optional[date]
+    start_datetime_to: Optional[date]
     region: Optional[str]
-    category: Optional[str] = None
-    tags: Optional[List[str]] = None
+    event_type: Optional[str] = None
+    dance_style: Optional[str] = None
     price_min: Optional[float] = None
     price_max: Optional[float] = None
-    # audience_size_min: Optional[int] = None
-    # audience_size_max: Optional[int] = None
 
     def has_filters(self) -> bool:
         """Return True if any filters are set."""
         return any(
             [
-                self.date_from,
-                self.date_to,
-                self.city,
+                self.start_datetime_from,
+                self.start_datetime_to,
                 self.region,
-                self.category,
-                self.tags,
+                self.event_type,
+                self.dance_style,
             ]
         )
 
@@ -42,18 +39,16 @@ class SearchQuery:
 # Pydantic model for API validation
 
 
+
 class SearchQueryModel(BaseModel):
     text: str
-    date_from: Optional[date] = None
-    date_to: Optional[date] = None
-    city: Optional[str] = None
+    start_datetime_from: Optional[date] = None
+    start_datetime_to: Optional[date] = None
     region: Optional[str] = None
-    category: Optional[str] = None
-    tags: Optional[List[str]] = None
+    event_type: Optional[str] = None
+    dance_style: Optional[str] = None
     price_min: Optional[float] = None
     price_max: Optional[float] = None
-    # audience_size_min: Optional[int] = None
-    # audience_size_max: Optional[int] = None
 
     model_config = {"from_attributes": True}
 

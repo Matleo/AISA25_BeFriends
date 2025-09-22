@@ -1,8 +1,23 @@
 # Changelog
 
 
-## [0.2.2] - 2025-09-22
-# Changelog
+## [0.5.0] - 2025-09-22
+### Added
+- Chatbot and recommendations now always filter events by the user's preferred city (from profile) and only show events for the current week.
+- User profile city is mapped to the region filter for all event queries and recommendations.
+- Date filters for recommendations panel are automatically set to this week's range (Monday-Sunday).
+
+### Fixed
+- Prevented events from other cities/regions (e.g., Freiburg) from appearing in recommendations when user preference is set.
+- Ensured consistent event filtering logic between chatbot and recommendations panel.
+
+### Changed
+- Refactored `components/ui.py` and `components/chatbot_service.py` to enforce user preference and date logic for all event queries.
+
+### Release
+- This release completes the "chatbot backend logic" milestone for EventBot.
+
+---
 
 ## [0.3.0] - 2025-09-22
 ### Added

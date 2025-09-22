@@ -3,59 +3,86 @@
 from __future__ import annotations
 
 
+
 from dataclasses import dataclass
 from typing import List, Optional
 from pydantic import BaseModel
-
 import datetime
+
 
 
 @dataclass(frozen=True)
 class Event:
-    """Immutable event entity representing a social event."""
+    """Immutable event entity representing a social event (new schema)."""
 
     id: Optional[str]
-    name: str
-    date: datetime.date
-    time_text: Optional[str]
-    location: Optional[str]
-    description: Optional[str]
-    city: Optional[str]
+    event_name: str
+    start_datetime: Optional[datetime.datetime]
+    end_datetime: Optional[datetime.datetime]
+    recurrence_rule: Optional[str]
+    date_description: Optional[str]
+    event_type: Optional[str]
+    dance_focus: Optional[str]
+    dance_style: Optional[str]
+    price_min: Optional[float]
+    price_max: Optional[float]
+    currency: Optional[str]
+    pricing_type: Optional[str]
+    price_category: Optional[str]
+    audience_min: Optional[int]
+    audience_max: Optional[int]
+    audience_size_bucket: Optional[str]
+    age_min: Optional[int]
+    age_max: Optional[int]
+    age_group_label: Optional[str]
+    user_category: Optional[str]
+    event_location: Optional[str]
     region: Optional[str]
-    source_id: Optional[str]
-    ingested_at: datetime.datetime
-    category: Optional[str] = None
-    tags: Optional[List[str]] = None
-    price: Optional[str] = None
-    venue: Optional[str] = None
-    instagram: Optional[str] = None
+    season: Optional[str]
+    cross_border_potential: Optional[str]
+    organizer: Optional[str]
+    instagram: Optional[str]
+    ingested_at: datetime.datetime = datetime.datetime.now()
 
     def to_summary(self) -> str:
-        """Return a narrative summary of the event."""
-        summary = f"{self.name} on {self.date}"
-        if self.city:
-            summary += f" in {self.city}"
-        if self.category:
-            summary += f" [{self.category}]"
+        summary = f"{self.event_name} on {self.start_datetime}"
+        if self.event_location:
+            summary += f" at {self.event_location}"
+        if self.event_type:
+            summary += f" [{self.event_type}]"
         return summary
 
 
-# Pydantic model for API validation
+
+# Pydantic model for API validation (new schema)
 class EventModel(BaseModel):
     id: Optional[str] = None
-    name: str
-    date: datetime.date
-    time_text: Optional[str] = None
-    location: Optional[str] = None
-    description: Optional[str] = None
-    city: Optional[str] = None
+    event_name: str
+    start_datetime: Optional[datetime.datetime] = None
+    end_datetime: Optional[datetime.datetime] = None
+    recurrence_rule: Optional[str] = None
+    date_description: Optional[str] = None
+    event_type: Optional[str] = None
+    dance_focus: Optional[str] = None
+    dance_style: Optional[str] = None
+    price_min: Optional[float] = None
+    price_max: Optional[float] = None
+    currency: Optional[str] = None
+    pricing_type: Optional[str] = None
+    price_category: Optional[str] = None
+    audience_min: Optional[int] = None
+    audience_max: Optional[int] = None
+    audience_size_bucket: Optional[str] = None
+    age_min: Optional[int] = None
+    age_max: Optional[int] = None
+    age_group_label: Optional[str] = None
+    user_category: Optional[str] = None
+    event_location: Optional[str] = None
     region: Optional[str] = None
-    source_id: Optional[str] = None
-    ingested_at: datetime.datetime
-    category: Optional[str] = None
-    tags: Optional[List[str]] = None
-    price: Optional[str] = None
-    venue: Optional[str] = None
+    season: Optional[str] = None
+    cross_border_potential: Optional[str] = None
+    organizer: Optional[str] = None
     instagram: Optional[str] = None
+    ingested_at: datetime.datetime = datetime.datetime.now()
 
     model_config = {"from_attributes": True}
