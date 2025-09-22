@@ -18,26 +18,24 @@ class ResponseFormatter:
         """
         lines = []
         for i, event in enumerate(events, 1):
-            time = getattr(event, 'time_text', None)
-            location = getattr(event, 'location', None)
+            time = getattr(event, 'start_datetime', None)
+            location = getattr(event, 'event_location', None)
             instagram = getattr(event, 'instagram', None)
-            date_str = str(getattr(event, 'date', None))
-            if with_weekday:
+            date_str = str(event.start_datetime.date()) if event.start_datetime else "n/a"
+            if with_weekday and event.start_datetime:
                 try:
-                    import datetime
-                    date_obj = datetime.datetime.strptime(date_str[:10], "%Y-%m-%d")
-                    weekday = date_obj.strftime("%A")
+                    weekday = event.start_datetime.strftime("%A")
                     date_with_weekday = f"{date_str} ({weekday})"
                 except Exception:
                     date_with_weekday = date_str
             else:
                 date_with_weekday = date_str
-            name = getattr(event, 'name', '')
-            city = getattr(event, 'city', 'n/a')
-            category = getattr(event, 'category', 'n/a')
-            line = f"{i}. {name} ({date_with_weekday}, {city}, {category})"
+            name = getattr(event, 'event_name', '')
+            region = getattr(event, 'region', 'n/a')
+            event_type = getattr(event, 'event_type', 'n/a')
+            line = f"{i}. {name} ({date_with_weekday}, {region}, {event_type})"
             if time:
-                line += f" at {time}"
+                line += f" at {time.strftime('%H:%M') if hasattr(time, 'strftime') else time}"
             if location:
                 line += f" | {location}"
             if instagram:
@@ -45,7 +43,7 @@ class ResponseFormatter:
                 url = f"https://instagram.com/{handle}"
                 line += f" | IG: [{instagram}]({url})"
             lines.append(line)
-            desc = getattr(event, 'description', None)
+            desc = getattr(event, 'date_description', None)
             if desc:
                 lines.append(f"   - {desc[:120]}{'...' if len(desc) > 120 else ''}")
         return "\n".join(lines)
@@ -62,23 +60,24 @@ class ResponseFormatter:
             return "(No events available)"
         lines = []
         for e in events:
-            time = getattr(e, 'time_text', None)
-            location = getattr(e, 'location', None)
+            time = getattr(e, 'start_datetime', None)
+            location = getattr(e, 'event_location', None)
             instagram = getattr(e, 'instagram', None)
-            date_str = str(getattr(e, 'date', None))
-            try:
-                import datetime
-                date_obj = datetime.datetime.strptime(date_str[:10], "%Y-%m-%d")
-                weekday = date_obj.strftime("%A")
-                date_with_weekday = f"{date_str} ({weekday})"
-            except Exception:
+            date_str = str(e.start_datetime.date()) if e.start_datetime else "n/a"
+            if e.start_datetime:
+                try:
+                    weekday = e.start_datetime.strftime("%A")
+                    date_with_weekday = f"{date_str} ({weekday})"
+                except Exception:
+                    date_with_weekday = date_str
+            else:
                 date_with_weekday = date_str
-            name = getattr(e, 'name', '')
-            city = getattr(e, 'city', 'n/a')
-            category = getattr(e, 'category', 'n/a')
-            line = f"- {name} ({date_with_weekday}, {city}, {category})"
+            name = getattr(e, 'event_name', '')
+            region = getattr(e, 'region', 'n/a')
+            event_type = getattr(e, 'event_type', 'n/a')
+            line = f"- {name} ({date_with_weekday}, {region}, {event_type})"
             if time:
-                line += f" at {time}"
+                line += f" at {time.strftime('%H:%M') if hasattr(time, 'strftime') else time}"
             if location:
                 line += f" | {location}"
             if instagram:
@@ -96,10 +95,10 @@ class ResponseFormatter:
         lines = [f"Found {result.total} event(s):"]
         for event in result.events[:5]:
             summary = event.to_summary()
-            if event.price:
-                summary += f" (Price: {event.price})"
-            if event.tags:
-                summary += f" Tags: {', '.join(event.tags)}"
+            if event.price_min is not None or event.price_max is not None:
+                summary += f" (Price: {event.price_min} - {event.price_max} {event.currency or ''})"
+            if event.dance_style:
+                summary += f" Style: {event.dance_style}"
             lines.append(summary)
         if result.total > 5:
             lines.append(f"...and {result.total - 5} more.")
@@ -111,19 +110,19 @@ class ResponseFormatter:
         for event in result.events:
             card = {
                 "id": event.id,
-                "title": event.name,
-                "date": str(event.date),
-                "time": event.time_text,
-                "location": event.location,
-                "city": event.city,
+                "title": event.event_name,
+                "start_datetime": event.start_datetime.isoformat() if event.start_datetime else None,
+                "end_datetime": event.end_datetime.isoformat() if event.end_datetime else None,
+                "event_type": event.event_type,
+                "dance_style": event.dance_style,
+                "price_min": event.price_min,
+                "price_max": event.price_max,
+                "currency": event.currency,
                 "region": event.region,
-                "category": event.category,
-                "tags": event.tags,
-                "price": event.price,
-                "venue": event.venue,
-                "description": event.description,
-                "source_id": event.source_id,
+                "event_location": event.event_location,
+                "organizer": event.organizer,
                 "instagram": getattr(event, "instagram", None),
+                "description": event.date_description,
             }
             cards.append(card)
         return cards

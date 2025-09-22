@@ -53,24 +53,46 @@ def render_spinner():
                 """,
                 unsafe_allow_html=True,
         )
+import logging
+logger = logging.getLogger(__name__)
 
 def render_onboarding_and_quick_replies():
-    st.chat_message("assistant").write("👋 Hi! I'm <b>EventMate</b>, your friendly companion for discovering fun things to do. Your preferences are set up and used only for recommendations. Looking for something fun this weekend? Just ask or see my recommendations below!", unsafe_allow_html=True)
+    logger.info("Entered render_onboarding_and_quick_replies")
+    try:
+        logger.info(f"streamlit module: {st}")
+    except Exception as e:
+        logger.error(f"streamlit import error: {e}")
+    st.chat_message("assistant").write(
+        "👋 Hi! I'm <b>EventMate</b>, your friendly companion for discovering fun things to do. "
+        "What are you in the mood for? Try one of these or ask me anything!",
+        unsafe_allow_html=True
+    )
     quick_replies = [
-        {"label": "What's happening this weekend?", "value": "What's happening this weekend?"},
-        {"label": "Concerts nearby", "value": "Show me concerts nearby"},
-        {"label": "Dance socials", "value": "Any dance socials?"},
-        {"label": "Dog-friendly events", "value": "Dog-friendly events"},
-        {"label": "Outdoor activities", "value": "Outdoor activities this weekend"},
+        {"label": "Find something fun tonight!", "value": "What's happening tonight?"},
+        {"label": "Surprise me with an event!", "value": "Surprise me with a random event."},
+        {"label": "Best free events nearby", "value": "Show me the best free events near me."},
+        {"label": "Family or kids activities", "value": "What can I do with my family or kids this weekend?"},
+        {"label": "Meet new people", "value": "Show me social events where I can meet new people."},
     ]
     st.markdown("<div class='quick-reply-row' style='margin-top:0.5em;'>", unsafe_allow_html=True)
     cols = st.columns(len(quick_replies))
-    selected_quick = None
     for i, chip in enumerate(quick_replies):
         if cols[i].button(chip["label"], key=f"quickreply_{i}", help=chip["value"], use_container_width=True):
-            selected_quick = chip["value"]
+            st.session_state["pending_user_message"] = chip["value"]
+            st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
-    return selected_quick
+    quick_replies = [
+        {"label": "Find something fun tonight!", "value": "What's happening tonight?"},
+        {"label": "Surprise me with an event!", "value": "Surprise me with a random event."},
+        {"label": "Best free events nearby", "value": "Show me the best free events near me."},
+        {"label": "Family or kids activities", "value": "What can I do with my family or kids this weekend?"},
+        {"label": "Meet new people", "value": "Show me social events where I can meet new people."},
+    ]
+    st.markdown("<div class='quick-reply-row' style='margin-top:0.5em;'>", unsafe_allow_html=True)
+    cols = st.columns(len(quick_replies))
+    import html
+    from typing import Optional
+    st.markdown("</div>", unsafe_allow_html=True)
 
 def strip_html(text: Optional[str]) -> str:
     if not isinstance(text, str):

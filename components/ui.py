@@ -20,6 +20,7 @@ def render_event_recommendations(
     import json
     formatter = ResponseFormatter()
     # Load user profile (hardcoded fallback for sidebar)
+    import datetime
     if filters is None:
         filters = {}
     try:
@@ -27,6 +28,15 @@ def render_event_recommendations(
             profile = json.load(f)
     except Exception:
         profile = {"city": "Basel", "interests": []}
+    # --- Patch: Always filter by user city (as region) and this week ---
+    if profile.get("city") and not filters.get("region"):
+        filters["region"] = profile["city"]
+    # Set date_from/date_to to this week (Monday-Sunday)
+    today = datetime.datetime.now().date()
+    start_of_week = today - datetime.timedelta(days=today.weekday())
+    end_of_week = start_of_week + datetime.timedelta(days=6)
+    filters["date_from"] = start_of_week
+    filters["date_to"] = end_of_week
     try:
         repo = CatalogRepository()
         recommender = RecommendationService(repo)
@@ -76,46 +86,66 @@ def render_sidebar_filters(default_city: str = "Vienna") -> Dict[str, Any]:
 
 
 def render_event_card(event: Dict[str, Any], key_prefix: str = "") -> None:
-    # Debug: print all variables used in the template (after assignment)
-    # Only use image, no emoji fallback
-    thumbnail = event.get("image")
-    """
-    Render a single event as a rich card.
-
-    Args:
-        event (Dict[str, Any]): Event data to render.
-        key_prefix (str, optional): Prefix for Streamlit widget keys to avoid collisions.
-    """
-    # Fallback emoji by category
-    emoji_map = {
-        "Music": "🎶", "Sports": "🏅", "Food & Drink": "🍽️", "Theater": "🎭", "Comedy": "😂",
-        "Family": "👨‍👩‍👧", "Outdoors": "🌳", "Workshops": "🛠️", "Other": "🎫"
-    }
-    category = event.get("category", "Other")
-    title = event.get("title", "Event")
-    date = event.get("date", "")
-    venue = event.get("venue", "")
-    distance = event.get("distance_km")
-    price = event.get("price", "")
-    price_label = "Free" if price == 0 else f"{price}"
-    category_pill = f'<span class="pill category {category.lower()}">{category}</span>'
+    # Use new event schema fields
+    thumbnail = event.get("image")  # If you have image URLs in the new schema, otherwise None
+    event_name = event.get("title") or event.get("event_name") or "Event"
+    # Date/time formatting
+    start_dt = event.get("start_datetime")
+    end_dt = event.get("end_datetime")
+    if start_dt:
+        try:
+            # Accept both string and datetime
+            import datetime
+            if isinstance(start_dt, str):
+                start_dt_obj = datetime.datetime.fromisoformat(start_dt)
+            else:
+                start_dt_obj = start_dt
+            date_str = start_dt_obj.strftime("%a, %d %b %Y %H:%M")
+        except Exception:
+            date_str = str(start_dt)
+    else:
+        date_str = "Date tbd"
+    # Location/region
+    event_location = event.get("event_location") or event.get("venue") or ""
+    region = event.get("region") or ""
+    # Event type/category
+    event_type = event.get("event_type") or event.get("category") or "Other"
+    # Price
+    price_min = event.get("price_min")
+    price_max = event.get("price_max")
+    currency = event.get("currency") or ""
+    if price_min is not None and price_max is not None:
+        if price_min == 0 and price_max == 0:
+            price_label = "Free"
+        elif price_min == price_max:
+            price_label = f"{price_min} {currency}"
+        else:
+            price_label = f"{price_min}-{price_max} {currency}"
+    elif price_min is not None:
+        price_label = f"from {price_min} {currency}"
+    else:
+        price_label = "?"
+    # Pills
+    type_pill = f'<span class="pill category {event_type.lower().replace(" ", "-")}">{event_type}</span>'
     price_pill = f'<span class="pill price">{price_label}</span>'
-    dist_badge = f'<span class="distance-badge">{distance:.1f} km</span>' if distance else ""
-    description = event.get("description") or event.get("short_description") or "No description available."
+    # Description
+    description = event.get("description") or event.get("date_description") or "No description available."
+    # Instagram
     instagram = event.get("instagram")
     insta_btn = ""
     if instagram:
         handle = instagram.lstrip("@")
         url = f"https://instagram.com/{handle}"
         insta_btn = f'<a href="{url}" target="_blank" rel="noopener noreferrer"><button class="icon" title="Instagram"><span style="font-size:1.2em;">📸</span></button></a>'
+    # HTML
     html = (
         '<div class="event-card">'
         '<div class="event-card-row">'
         + (f'<div class="event-thumb-large">{thumbnail}</div>' if thumbnail else '')
         + '<div class="event-main">'
-        + f'<div class="event-title">{title}</div>'
-        + f'<div class="event-meta">{date} • {venue} {dist_badge}</div>'
-        + f'<div class="event-pills">{category_pill} {price_pill}</div>'
+        + f'<div class="event-title">{event_name}</div>'
+        + f'<div class="event-meta">{date_str} • {event_location} {region}</div>'
+        + f'<div class="event-pills">{type_pill} {price_pill}</div>'
         + '</div>'
         + '</div>'
         + f'<div class="event-desc">{description}</div>'
@@ -134,7 +164,6 @@ def render_event_card(event: Dict[str, Any], key_prefix: str = "") -> None:
         st.markdown(html, unsafe_allow_html=True)
     except Exception as e:
         st.warning(f"Could not render event card: {e}")
-    # Ensure there is no stray </div> after this line
 
 def render_chips(
     chips: List[Dict[str, str]],

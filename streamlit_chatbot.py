@@ -11,7 +11,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("streamlit_chatbot")
 
-CHATBOT_TODAY = datetime.datetime(2025, 9, 19, 14, 0, 0)
+def get_chatbot_today():
+    # Always return the current datetime for chatbot logic
+    import datetime
+    return datetime.datetime.now()
 from components.ui import render_event_recommendations, render_sidebar_filters
 from components.chat_ui import (
     render_chat_card_header,
@@ -49,7 +52,7 @@ def get_event_summaries(filters, profile, limit=10):
     try:
         repo = CatalogRepository()
         recommender = RecommendationService(repo)
-        events = recommender.recommend_events(filters, profile, limit, today=CHATBOT_TODAY)
+        events = recommender.recommend_events(filters, profile, limit, today=get_chatbot_today())
         formatter = ResponseFormatter()
         return formatter.chat_event_summary(events)
     except Exception:
@@ -164,24 +167,10 @@ def render_chat_ui(chatbot_client):
     except Exception:
         st.warning("Could not load chat styles asset.")
     # --- Chat input area ---
-    # Show quick reply buttons if only the welcome message is present
-    if (
-        len(st.session_state["messages"]) == 1
-        and st.session_state["messages"][0]["role"] == "assistant"
-    ):
-        st.markdown("<div style='margin-top:1.5em;'></div>", unsafe_allow_html=True)
-        quick_replies = [
-            "What's happening this weekend?",
-            "Concerts nearby",
-            "Dance socials",
-            "Dog-friendly events",
-            "Outdoor activities this weekend",
-        ]
-        cols = st.columns(len(quick_replies))
-        for i, label in enumerate(quick_replies):
-            if cols[i].button(label, key=f"quickreply_{i}"):
-                st.session_state["pending_user_message"] = label
-                st.rerun()
+    # Show onboarding UI if chat history is empty
+    if len(st.session_state["messages"]) == 0:
+        from components.chat_ui import render_onboarding_and_quick_replies
+        render_onboarding_and_quick_replies()
 
     # Standard Streamlit chat input
     st.markdown("""
@@ -253,12 +242,12 @@ def main():
     if "apply_filters" not in st.session_state.filters or not st.session_state.filters["apply_filters"]:
         st.session_state.filters["apply_filters"] = True
     # --- Onboarding/welcome message logic ---
-    welcome_msg = "👋 Hi! I'm <b>EventMate</b>, your friendly companion for discovering fun things to do. Your preferences are set up and used only for recommendations. Looking for something fun this weekend? Just ask or see my recommendations below!"
     if "messages" not in st.session_state or not st.session_state.messages:
         st.session_state["messages"] = []
-        append_message("assistant", welcome_msg)
-    elif st.session_state["messages"][0].get("content") != welcome_msg:
-        st.session_state["messages"].insert(0, {"role": "assistant", "content": welcome_msg, "timestamp": datetime.datetime.now().strftime("%H:%M")})
+        # Ensure the first request to the chatbot includes the current date in filters
+        if "filters" not in st.session_state:
+            st.session_state["filters"] = {}
+        st.session_state["filters"]["date_from"] = datetime.datetime.now().date()
 
     # --- AppConfig and ChatbotClient setup ---
     try:
@@ -351,7 +340,7 @@ def main():
                     st.session_state["messages"],
                     st.session_state["filters"],
                     intent,
-                    CHATBOT_TODAY,
+                    get_chatbot_today(),
                     CatalogRepository(),
                     RecommendationService(CatalogRepository()),
                     events_to_json,
