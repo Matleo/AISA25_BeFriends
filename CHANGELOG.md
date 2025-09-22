@@ -1,5 +1,22 @@
 # Changelog
 
+
+## [0.2.2] - 2025-09-22
+### Fixed
+- Chat input: Send button is always enabled and both Enter and Send submit the message
+- Empty messages are ignored with a warning, preventing accidental empty sends
+- Refactored chat input logic for robust, interactive user experience
+
+### Changed
+- Chat input now uses Streamlit form and form_submit_button for consistent behavior
+
+### Open Points
+- User chat input still sometimes displays as code block if backend or other logic returns HTML—needs further backend sanitization.
+- Review all message formatting for edge cases (Markdown, emoji, etc.).
+- Test with more diverse user/assistant message content.
+
+---
+
 ## [0.2.1] - 2025-09-22
 ### Fixed
 - Fixed: User chat input and quick replies now always store and display only plain text, never HTML or code blocks.
