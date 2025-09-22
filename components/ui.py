@@ -1,6 +1,7 @@
 from befriends.recommendation.service import RecommendationService
 from befriends.catalog.repository import CatalogRepository
 import streamlit as st
+import logging
 from typing import Dict, Any, List, Optional, Callable
 from befriends.response.formatter import ResponseFormatter
 def render_event_recommendations(
@@ -16,22 +17,26 @@ def render_event_recommendations(
     """
     st.markdown("---")
     st.markdown("##### Recommended for you")
+    import json
+    formatter = ResponseFormatter()
+    # Load user profile (hardcoded fallback for sidebar)
+    if filters is None:
+        filters = {}
     try:
-        import json
-        formatter = ResponseFormatter()
-        # Load user profile (hardcoded fallback for sidebar)
-        if filters is None:
-            filters = {}
-        try:
-            with open("karolina_profile.json", "r") as f:
-                profile = json.load(f)
-        except Exception:
-            profile = {"city": "Basel", "interests": []}
+        with open("karolina_profile.json", "r") as f:
+            profile = json.load(f)
+    except Exception:
+        profile = {"city": "Basel", "interests": []}
+    try:
         repo = CatalogRepository()
         recommender = RecommendationService(repo)
         filtered_events = recommender.recommend_events(filters, profile, max_events)
-        # Use the actual SearchResult dataclass for formatter
+        # Debug: show number of events found and type
+        # Ensure filtered_events are Event objects, not dicts
+        from befriends.domain.event import Event
         from befriends.domain.search_models import SearchResult
+        if filtered_events and isinstance(filtered_events[0], dict):
+            filtered_events = [Event(**e) for e in filtered_events]
         cards = formatter.to_cards(SearchResult(events=filtered_events, total=len(filtered_events)))
         if not cards:
             st.info("No events found for your filters.")
@@ -39,6 +44,7 @@ def render_event_recommendations(
             render_event_card(card, key_prefix=f"rec{i}_")
     except Exception as e:
         st.warning(f"Could not load event recommendations: {e}")
+        st.info("No events found for your filters.")
 def render_sidebar_filters(default_city: str = "Vienna") -> Dict[str, Any]:
     """
     Render sidebar filter widgets and return a dict of filter values.
@@ -56,6 +62,7 @@ def render_sidebar_filters(default_city: str = "Vienna") -> Dict[str, Any]:
     price_min = st.sidebar.number_input("Min price", min_value=0.0, value=0.0, step=1.0, key="sidebar_price_min")
     price_max = st.sidebar.number_input("Max price", min_value=0.0, value=0.0, step=1.0, key="sidebar_price_max")
     apply_filters = st.sidebar.button("Apply Filters", key="sidebar_apply_filters")
+    reset_filters = st.sidebar.button("Reset Filters", key="sidebar_reset_filters")
     return {
         "city": city,
         "category": category,
@@ -64,10 +71,14 @@ def render_sidebar_filters(default_city: str = "Vienna") -> Dict[str, Any]:
         "price_min": price_min,
         "price_max": price_max,
         "apply_filters": apply_filters,
+        "reset_filters": reset_filters,
     }
 
 
 def render_event_card(event: Dict[str, Any], key_prefix: str = "") -> None:
+    # Debug: print all variables used in the template (after assignment)
+    # Only use image, no emoji fallback
+    thumbnail = event.get("image")
     """
     Render a single event as a rich card.
 
@@ -81,8 +92,6 @@ def render_event_card(event: Dict[str, Any], key_prefix: str = "") -> None:
         "Family": "👨‍👩‍👧", "Outdoors": "🌳", "Workshops": "🛠️", "Other": "🎫"
     }
     category = event.get("category", "Other")
-    emoji = emoji_map.get(category, "🎫")
-    thumbnail = event.get("image") or emoji
     title = event.get("title", "Event")
     date = event.get("date", "")
     venue = event.get("venue", "")
@@ -99,27 +108,32 @@ def render_event_card(event: Dict[str, Any], key_prefix: str = "") -> None:
         handle = instagram.lstrip("@")
         url = f"https://instagram.com/{handle}"
         insta_btn = f'<a href="{url}" target="_blank" rel="noopener noreferrer"><button class="icon" title="Instagram"><span style="font-size:1.2em;">📸</span></button></a>'
+    html = (
+        '<div class="event-card">'
+        '<div class="event-card-row">'
+        + (f'<div class="event-thumb-large">{thumbnail}</div>' if thumbnail else '')
+        + '<div class="event-main">'
+        + f'<div class="event-title">{title}</div>'
+        + f'<div class="event-meta">{date} • {venue} {dist_badge}</div>'
+        + f'<div class="event-pills">{category_pill} {price_pill}</div>'
+        + '</div>'
+        + '</div>'
+        + f'<div class="event-desc">{description}</div>'
+        + '<div class="event-footer">'
+        + '<button class="primary">View & Book</button>'
+        + '<div class="event-footer-actions">'
+        + '<button class="icon" title="Save">★</button>'
+        + '<button class="icon" title="Share">🔗</button>'
+        + f'{insta_btn}'
+        + '</div>'
+        + '</div>'
+        + '</div>'
+    )
+    logging.info(f"[render_event_card] Rendered HTML: {html}")
     try:
-        st.markdown(f"""
-        <div class="event-card">
-            <div class="event-thumb">{thumbnail}</div>
-            <div class="event-main">
-                <div class="event-title"><b>{title}</b></div>
-                <div class="event-meta">{date} • {venue} {dist_badge}</div>
-                <div class="event-desc" style="color:#444;font-size:0.98em;margin-bottom:0.4em;">{description}</div>
-                <div class="event-pills">{category_pill} {price_pill}</div>
-            </div>
-            <div class="event-footer">
-                <button class="primary">View & Book</button>
-                <button class="icon">★</button>
-                <button class="icon">🔗</button>
-                {insta_btn}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(html, unsafe_allow_html=True)
     except Exception as e:
         st.warning(f"Could not render event card: {e}")
-    # Remove any accidental print or st.write of '</div>' after this line
     # Ensure there is no stray </div> after this line
 
 def render_chips(
@@ -151,24 +165,25 @@ def inject_styles() -> None:
     Inject custom CSS styles for event cards, chips, and other UI elements into the Streamlit app.
     """
     st.markdown("""
-    <style>
-    .event-card {background: var(--secondary-background-color,#f7f8fa); border-radius: 18px; box-shadow: 0 2px 8px #0001; padding: 1rem; margin-bottom: 1rem; display: flex; flex-direction: column; transition: box-shadow .2s;}
-    .event-card:hover {box-shadow: 0 4px 16px #0002; transform: translateY(-2px);}
-    .event-thumb {font-size: 2.2rem; margin-bottom: 0.5rem;}
-    .event-title {font-size: 1.1rem; margin-bottom: 0.2rem;}
-    .event-meta {color: #555; font-size: 0.95rem; margin-bottom: 0.3rem;}
-    .event-pills {margin-bottom: 0.5rem;}
-    .pill {display: inline-block; border-radius: 999px; padding: 0.2em 0.8em; font-size: 0.85em; margin-right: 0.3em; background: #e0f7fa; color: #00796b;}
-    .pill.price {background: #e3e3e3; color: #222;}
-    .pill.category.music {background: #e0f7fa; color: #00796b;}
-    .pill.category.sports {background: #fff3e0; color: #ef6c00;}
-    .pill.category.food\ \&\ drink {background: #fce4ec; color: #ad1457;}
-    .pill.category.theater {background: #ede7f6; color: #5e35b1;}
-    .pill.category.comedy {background: #fffde7; color: #fbc02d;}
-    .pill.category.family {background: #e8f5e9; color: #388e3c;}
-    .pill.category.outdoors {background: #e0f2f1; color: #00695c;}
-    .pill.category.workshops {background: #f3e5f5; color: #8e24aa;}
-    .distance-badge {background: #e0e0e0; color: #333; border-radius: 8px; padding: 0.1em 0.5em; font-size: 0.8em; margin-left: 0.5em;}
+    try:
+        repo = CatalogRepository()
+        recommender = RecommendationService(repo)
+        filtered_events = recommender.recommend_events(filters, profile, max_events)
+        from befriends.domain.event import Event
+        from befriends.domain.search_models import SearchResult
+        if filtered_events and isinstance(filtered_events[0], dict):
+            filtered_events = [Event(**e) for e in filtered_events]
+        cards = formatter.to_cards(SearchResult(events=filtered_events, total=len(filtered_events)))
+        if not cards:
+            st.info("No events found for your filters. Showing recent events instead.")
+            # Relax filters: show recent events (no filters)
+            filtered_events = recommender.recommend_events({}, profile, max_events)
+            cards = formatter.to_cards(SearchResult(events=filtered_events, total=len(filtered_events)))
+        for i, card in enumerate(cards):
+            render_event_card(card, key_prefix=f"rec{i}_")
+    except Exception as e:
+        st.warning(f"Could not load event recommendations: {e}")
+        st.info("No events found for your filters.")
     .event-footer {display: flex; gap: 0.5em;}
     .event-footer .primary {background: #00bcd4; color: #fff; border: none; border-radius: 8px; padding: 0.4em 1.2em; font-weight: 600; cursor: pointer;}
     .event-footer .icon {background: none; border: none; font-size: 1.2em; cursor: pointer;}

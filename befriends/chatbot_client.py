@@ -1,4 +1,3 @@
-
 from befriends.common.config import AppConfig
 import requests
 from typing import List, Dict, Optional
@@ -59,7 +58,8 @@ class ChatbotClient:
                 json=payload,
                 timeout=30  # Allow up to 30s for OpenAI response
             )
-            logger.info("Received response: %s", response.status_code)
+            logger.info(f"[DEBUG] OpenAI API request payload: {payload}")
+            logger.info(f"[DEBUG] OpenAI API response status: {response.status_code}")
         except requests.Timeout:
             logger.error("Backend request timed out after 30 seconds.")
             msg = "The backend took too long to respond (30s). Please try again later."
@@ -70,9 +70,24 @@ class ChatbotClient:
         try:
             response.raise_for_status()
             data = response.json()
+            logger.info(f"[DEBUG] OpenAI API response JSON: {data}")
+            if not data or "choices" not in data or not data["choices"] or "message" not in data["choices"][0] or "content" not in data["choices"][0]["message"]:
+                logger.error(f"[ERROR] Malformed OpenAI API response: {data}")
         except Exception as e:
             logger.exception("Failed to parse backend response: %s", e)
             raise RuntimeError(f"Failed to parse backend response: {e}")
         # OpenAI API returns choices[0]['message']['content']
         logger.debug("Backend response JSON: %s", data)
-        return data["choices"][0]["message"]["content"]
+        # Defensive: Always return a string, even if malformed
+        try:
+            content = data["choices"][0]["message"]["content"]
+            if not isinstance(content, str) or not content.strip():
+                logger.error(f"[ERROR] OpenAI API response missing or empty content: {data}")
+                logger.info(f"[TRACE] Returning fallback assistant message from ChatbotClient: I'm here to help! Could you please rephrase your question or ask about events, concerts, or activities? 😊")
+                return "I'm here to help! Could you please rephrase your question or ask about events, concerts, or activities? 😊"
+            logger.info(f"[TRACE] Returning assistant content from ChatbotClient: {repr(content)}")
+            return content
+        except Exception as e:
+            logger.error(f"[ERROR] Exception extracting content from OpenAI API response: {e}, data: {data}")
+            logger.info(f"[TRACE] Returning fallback assistant message from ChatbotClient: I'm here to help! Could you please rephrase your question or ask about events, concerts, or activities? 😊")
+            return "I'm here to help! Could you please rephrase your question or ask about events, concerts, or activities? 😊"
