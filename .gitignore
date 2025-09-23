@@ -1,3 +1,5 @@
+# Ignore all .mov video files
+*.mov
 # Python
 __pycache__/
 *.py[cod]
