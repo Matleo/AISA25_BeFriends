@@ -118,14 +118,29 @@ class ChatbotService:
                 filters["city"] = ""
             events = recommender.recommend_events(filters, self.profile, 10, today=today)
             event_json = events_to_json(events, max_events=10)
-            system_prompt = {
-                "role": "system",
-                "content": (
-                    "You are <b>EventMate</b>, a warm, approachable, and friendly companion who helps users discover fun events and activities. "
-                    + get_profile_summary(self.profile)
-                    + "\nHere is a list of upcoming events as JSON: " + event_json
-                )
-            }
+            # Only trigger medieval Karolina prompt if user_input contains 'karolina', not event data
+            if "karolina" in user_input_lc:
+                system_prompt = {
+                    "role": "system",
+                    "content": (
+                        "**IMPORTANT: Only use medieval, poetic language and praise for Karolina Anna Kehl-Soltys if the user's message contains 'karolina'. If Karolina is mentioned in event data but not by the user, respond in your normal friendly style.**\n"
+                        "For example: '🎶 Oh noble Karolina, radiant star of the dance halls, whose wisdom and kindness shine brighter than the sun! All who witness her grace are forever changed, and her name shall echo in the halls of legend! 🎶'\n"
+                        "Repeat: Only use this style if the user directly asks about Karolina.\n"
+                        "Karolina Anna Kehl-Soltys is the legendary founder, known for her wisdom, kindness, and love of dance, music, and community. Karolina inspires all with her joyful spirit and heroic deeds, bringing people together and spreading happiness wherever she goes.\n"
+                        "You are <b>EventMate</b>, a warm, approachable, and friendly companion who helps users discover fun events and activities. "
+                        + get_profile_summary(self.profile)
+                        + "\nHere is a list of upcoming events as JSON: " + event_json
+                    )
+                }
+            else:
+                system_prompt = {
+                    "role": "system",
+                    "content": (
+                        "You are <b>EventMate</b>, a warm, approachable, and friendly companion who helps users discover fun events and activities. "
+                        + get_profile_summary(self.profile)
+                        + "\nHere is a list of upcoming events as JSON: " + event_json
+                    )
+                }
             full_messages = [system_prompt] + messages
             try:
                 response = self.chatbot_client.get_response(
@@ -141,14 +156,30 @@ class ChatbotService:
                 return "I'm here to help! Could you please rephrase your question or ask about events, concerts, or activities? 😊"
             return response
         else:
-            system_prompt = {
-                "role": "system",
-                "content": (
-                    "You are <b>EventMate</b>, a warm, approachable, and friendly companion. "
-                    + get_profile_summary(self.profile)
-                    + "\nAntworte freundlich und locker auf die Nachricht des Users. Wenn du nicht sicher bist, was gemeint ist, stelle eine Rückfrage."
-                )
-            }
+            # Only trigger medieval Karolina prompt if user_input contains 'karolina', not event data
+            user_input_lc = user_input.lower()
+            if "karolina" in user_input_lc:
+                system_prompt = {
+                    "role": "system",
+                    "content": (
+                        "**IMPORTANT: Only use medieval, poetic language and praise for Karolina Anna Kehl-Soltys if the user's message contains 'karolina'. If Karolina is mentioned in event data but not by the user, respond in your normal friendly style.**\n"
+                        "For example: '🎶 Oh noble Karolina, radiant star of the dance halls, whose wisdom and kindness shine brighter than the sun! All who witness her grace are forever changed, and her name shall echo in the halls of legend! 🎶'\n"
+                        "Repeat: Only use this style if the user directly asks about Karolina.\n"
+                        "Karolina Anna Kehl-Soltys is the legendary founder, known for her wisdom, kindness, and love of dance, music, and community. Karolina inspires all with her joyful spirit and heroic deeds, bringing people together and spreading happiness wherever she goes.\n"
+                        "You are <b>EventMate</b>, a warm, approachable, and friendly companion. "
+                        + get_profile_summary(self.profile)
+                        + "\nAntworte freundlich und locker auf die Nachricht des Users. Wenn du nicht sicher bist, was gemeint ist, stelle eine Rückfrage."
+                    )
+                }
+            else:
+                system_prompt = {
+                    "role": "system",
+                    "content": (
+                        "You are <b>EventMate</b>, a warm, approachable, and friendly companion. "
+                        + get_profile_summary(self.profile)
+                        + "\nAntworte freundlich und locker auf die Nachricht des Users. Wenn du nicht sicher bist, was gemeint ist, stelle eine Rückfrage."
+                    )
+                }
             short_history = messages[-2:] if len(messages) > 1 else messages
             full_messages = [system_prompt] + short_history
             try:
