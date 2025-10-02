@@ -33,8 +33,13 @@ class RelevancePolicy:
                     s -= 10
                 if text in (event.date_description or "").lower():
                     s -= 5
-                if text in (event.dance_style or "").lower():
-                    s -= 5
+                # Fix: handle dance_style as list or string
+                if isinstance(event.dance_style, list):
+                    if any(text in (ds or "").lower() for ds in event.dance_style):
+                        s -= 5
+                elif isinstance(event.dance_style, str):
+                    if text in event.dance_style.lower():
+                        s -= 5
             # Event type exact match
             if (
                 hasattr(query, "event_type")
@@ -45,8 +50,13 @@ class RelevancePolicy:
                 s -= 5
             # Dance style match
             if hasattr(query, "dance_style") and query.dance_style and event.dance_style:
-                if query.dance_style.lower() in (event.dance_style or "").lower():
-                    s -= 3
+                q_style = query.dance_style.lower() if isinstance(query.dance_style, str) else query.dance_style
+                if isinstance(event.dance_style, list):
+                    if any(q_style in (ds or "").lower() for ds in event.dance_style):
+                        s -= 3
+                elif isinstance(event.dance_style, str):
+                    if q_style in event.dance_style.lower():
+                        s -= 3
             # Price proximity (if price filter used)
             if (hasattr(query, "price_min") or hasattr(query, "price_max")) and (event.price_min is not None or event.price_max is not None):
                 try:

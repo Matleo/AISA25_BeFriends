@@ -23,7 +23,7 @@ class Event:
     date_description: Optional[str]
     event_type: Optional[str]
     dance_focus: Optional[str]
-    dance_style: Optional[str]
+    dance_style: Optional[List[str]]
     price_min: Optional[float]
     price_max: Optional[float]
     currency: Optional[str]
@@ -67,7 +67,7 @@ class EventModel(BaseModel):
     date_description: Optional[str] = None
     event_type: Optional[str] = None
     dance_focus: Optional[str] = None
-    dance_style: Optional[str] = None
+    dance_style: Optional[List[str]] = None
     price_min: Optional[float] = None
     price_max: Optional[float] = None
     currency: Optional[str] = None

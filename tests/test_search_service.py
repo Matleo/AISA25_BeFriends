@@ -24,12 +24,12 @@ def search_service(mock_repository, mock_policy):
 
 
 def test_find_events_calls_repository_and_policy(search_service, mock_repository, mock_policy):
+    from datetime import datetime, timedelta
     query = SearchQuery(
         text="music",
-        date_from=None,
-        date_to=None,
-        city=None,
-        region=None,
+        start_datetime_from=datetime.now(),
+        start_datetime_to=datetime.now() + timedelta(days=30),
+        region="Berlin"
     )
     result = search_service.find_events(query)
     # Check repository.search_text called

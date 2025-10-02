@@ -4,17 +4,38 @@ from befriends.domain.event import Event
 
 
 def sample_event():
-    from datetime import date, datetime
+    from datetime import datetime
     return Event(
         id="1",
-        name="Sample Event",
-        date=date.today(),
-        time_text=None,
-        location=None,
-        description=None,
-        city=None,
+        event_name="Sample Event",
+        start_datetime=datetime(2025, 10, 1, 20, 0),
+        end_datetime=None,
+        recurrence_rule=None,
+        date_description=None,
+        event_type=None,
+        dance_focus=None,
+        dance_style=None,
+        price_min=None,
+        price_max=None,
+        currency=None,
+        pricing_type=None,
+        price_category=None,
+        audience_min=None,
+        audience_max=None,
+        audience_size_bucket=None,
+        age_min=None,
+        age_max=None,
+        age_group_label=None,
+        user_category=None,
+        event_location=None,
         region=None,
-        source_id=None,
+        season=None,
+        cross_border_potential=None,
+        organizer=None,
+        instagram=None,
+        event_link=None,
+        event_link_fit=None,
+        description=None,
         ingested_at=datetime.now()
     )
 

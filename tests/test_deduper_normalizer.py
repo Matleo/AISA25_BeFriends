@@ -20,28 +20,71 @@ def normalizer():
     ("A", "A", True),
 ])
 def test_is_duplicate_cases(deduper, a_name, b_name, expected):
+    from datetime import datetime
     e1 = Event(
         id="1",
-        name=a_name,
-        date=date.today(),
-        time_text=None,
-        location=None,
-        description=None,
-        city=None,
+        event_name=a_name,
+        start_datetime=datetime(2025, 10, 1, 20, 0),
+        end_datetime=None,
+        recurrence_rule=None,
+        date_description=None,
+        event_type=None,
+        dance_focus=None,
+        dance_style=None,
+        price_min=None,
+        price_max=None,
+        currency=None,
+        pricing_type=None,
+        price_category=None,
+        audience_min=None,
+        audience_max=None,
+        audience_size_bucket=None,
+        age_min=None,
+        age_max=None,
+        age_group_label=None,
+        user_category=None,
+        event_location=None,
         region=None,
-        source_id=None,
+        season=None,
+        cross_border_potential=None,
+        organizer=None,
+        instagram=None,
+        event_link=None,
+        event_link_fit=None,
+        description=None,
         ingested_at=datetime.now(),
     )
     e2 = Event(
         id="2",
-        name=b_name,
-        date=date.today(),
-        time_text=None,
-        location=None,
-        description=None,
-        city=None,
+        event_name=b_name,
+        start_datetime=datetime(2025, 10, 1, 20, 0),
+        end_datetime=None,
+        recurrence_rule=None,
+        date_description=None,
+        event_type=None,
+        dance_focus=None,
+        dance_style=None,
+        price_min=None,
+        price_max=None,
+        currency=None,
+        pricing_type=None,
+        price_category=None,
+        audience_min=None,
+        audience_max=None,
+        audience_size_bucket=None,
+        age_min=None,
+        age_max=None,
+        age_group_label=None,
+        user_category=None,
+        event_location=None,
         region=None,
-        source_id=None,
+        season=None,
+        cross_border_potential=None,
+        organizer=None,
+        instagram=None,
+        event_link=None,
+        event_link_fit=None,
+        description=None,
         ingested_at=datetime.now(),
     )
     assert deduper.is_duplicate(e1, e2) is expected
@@ -52,28 +95,71 @@ def test_is_duplicate_cases(deduper, a_name, b_name, expected):
     ("A", "A"),
 ])
 def test_merge_returns_first_param(deduper, a_name, b_name):
+    from datetime import datetime
     e1 = Event(
         id="1",
-        name=a_name,
-        date=date.today(),
-        time_text=None,
-        location=None,
-        description=None,
-        city=None,
+        event_name=a_name,
+        start_datetime=datetime(2025, 10, 1, 20, 0),
+        end_datetime=None,
+        recurrence_rule=None,
+        date_description=None,
+        event_type=None,
+        dance_focus=None,
+        dance_style=None,
+        price_min=None,
+        price_max=None,
+        currency=None,
+        pricing_type=None,
+        price_category=None,
+        audience_min=None,
+        audience_max=None,
+        audience_size_bucket=None,
+        age_min=None,
+        age_max=None,
+        age_group_label=None,
+        user_category=None,
+        event_location=None,
         region=None,
-        source_id=None,
+        season=None,
+        cross_border_potential=None,
+        organizer=None,
+        instagram=None,
+        event_link=None,
+        event_link_fit=None,
+        description=None,
         ingested_at=datetime.now(),
     )
     e2 = Event(
         id="2",
-        name=b_name,
-        date=date.today(),
-        time_text=None,
-        location=None,
-        description=None,
-        city=None,
+        event_name=b_name,
+        start_datetime=datetime(2025, 10, 1, 20, 0),
+        end_datetime=None,
+        recurrence_rule=None,
+        date_description=None,
+        event_type=None,
+        dance_focus=None,
+        dance_style=None,
+        price_min=None,
+        price_max=None,
+        currency=None,
+        pricing_type=None,
+        price_category=None,
+        audience_min=None,
+        audience_max=None,
+        audience_size_bucket=None,
+        age_min=None,
+        age_max=None,
+        age_group_label=None,
+        user_category=None,
+        event_location=None,
         region=None,
-        source_id=None,
+        season=None,
+        cross_border_potential=None,
+        organizer=None,
+        instagram=None,
+        event_link=None,
+        event_link_fit=None,
+        description=None,
         ingested_at=datetime.now(),
     )
     merged = deduper.merge(e1, e2)
@@ -81,7 +167,39 @@ def test_merge_returns_first_param(deduper, a_name, b_name):
 
 
 def test_normalize_and_batch(normalizer):
-    raw = {"name": "Test Event", "date": date.today()}
+    raw = {
+        "id": "1",
+        "event_name": "Test Event",
+        "start_datetime": datetime(2025, 10, 1, 20, 0),
+        "end_datetime": None,
+        "recurrence_rule": None,
+        "date_description": None,
+        "event_type": None,
+        "dance_focus": None,
+        "dance_style": ["test"],
+        "price_min": None,
+        "price_max": None,
+        "currency": None,
+        "pricing_type": None,
+        "price_category": None,
+        "audience_min": None,
+        "audience_max": None,
+        "audience_size_bucket": None,
+        "age_min": None,
+        "age_max": None,
+        "age_group_label": None,
+        "user_category": None,
+        "event_location": None,
+        "region": None,
+        "season": None,
+        "cross_border_potential": None,
+        "organizer": None,
+        "instagram": None,
+        "event_link": None,
+        "event_link_fit": None,
+        "description": None,
+        "ingested_at": datetime.now(),
+    }
     event = normalizer.normalize(raw)
     assert isinstance(event, Event)
     batch = normalizer.normalize_batch([raw, raw])
@@ -119,16 +237,16 @@ def test_dedupe_exception(monkeypatch, deduper):
         deduper.dedupe([Event(id="1", name="A", date=date.today(), time_text=None, location=None, description=None, city=None, region=None, source_id=None, ingested_at=datetime.now())])
 
 def test_normalize_invalid_date(normalizer):
-    # Should fallback to today if date is invalid
-    raw = {"name": "Bad Date", "date": "not-a-date"}
+    # Should fallback to now if start_datetime is invalid
+    raw = {"event_name": "Bad Date", "start_datetime": "not-a-date"}
     event = normalizer.normalize(raw)
     assert isinstance(event, Event)
 
 def test_normalize_missing_name(normalizer):
-    # Should default name to empty string
-    raw = {"date": date.today()}
+    # Should default event_name to empty string
+    raw = {"start_datetime": datetime.now()}
     event = normalizer.normalize(raw)
-    assert event.name == ""
+    assert event.event_name == ""
 
 def test_normalize_batch_exception(monkeypatch, normalizer):
     # Simulate exception in normalize_batch

@@ -3,23 +3,41 @@ from befriends.domain.event import Event
 
 import datetime
 class DummyRepo:
+    def search_text(self, *args, **kwargs):
+        return self.list_recent()
     def list_recent(self, limit=100):
         now = datetime.datetime.now()
         return [Event(
             id=str(i),
-            name=f"Event {i}",
-            date="2025-09-20",
-            city="Basel",
-            category="Music",
-            description="desc",
-            tags=["music"],
-            price=10,
-            venue="Venue",
+            event_name=f"Event {i}",
+            start_datetime=datetime.datetime(2025, 9, 20, 20, 0),
+            end_datetime=None,
+            recurrence_rule=None,
+            date_description=None,
+            event_type="Music",
+            dance_focus=None,
+            dance_style=["music"],
+            price_min=10,
+            price_max=10,
+            currency=None,
+            pricing_type=None,
+            price_category=None,
+            audience_min=None,
+            audience_max=None,
+            audience_size_bucket=None,
+            age_min=None,
+            age_max=None,
+            age_group_label=None,
+            user_category=None,
+            event_location="Loc",
             region="Region",
-            source_id="src",
-            time_text="20:00",
-            location="Loc",
+            season=None,
+            cross_border_potential=None,
+            organizer="Venue",
             instagram=None,
+            event_link=None,
+            event_link_fit=None,
+            description="desc",
             ingested_at=now
         ) for i in range(10)]
 

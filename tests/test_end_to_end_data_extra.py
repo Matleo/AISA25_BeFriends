@@ -15,19 +15,36 @@ def controller():
     import datetime
     salsa_event = Event(
         id="100",
-        name="Salsa Night",
-        date=datetime.date.today(),
-        time_text="21:00",
-        location="Test Club",
-        description="A salsa dance event",
-        city="Test City",
+        event_name="Salsa Night",
+        start_datetime=datetime.date.today(),
+        end_datetime=None,
+        recurrence_rule=None,
+        date_description=None,
+        event_type="Dance",
+        dance_focus=None,
+        dance_style=["Salsa", "party"],
+        price_min=10,
+        price_max=10,
+        currency=None,
+        pricing_type=None,
+        price_category=None,
+        audience_min=None,
+        audience_max=None,
+        audience_size_bucket=None,
+        age_min=None,
+        age_max=None,
+        age_group_label=None,
+        user_category=None,
+        event_location="Test Club",
         region="Test Region",
-        source_id="src-test",
+        season=None,
+        cross_border_potential=None,
+        organizer="Test Club",
+        instagram=None,
+        event_link=None,
+        event_link_fit=None,
+        description="A salsa dance event",
         ingested_at=datetime.datetime.now(),
-        category="Dance",
-        tags=["Salsa", "party"],
-        price="10",
-        venue="Test Club",
     )
     repo.upsert([salsa_event])
     policy = RelevancePolicy()
@@ -42,9 +59,12 @@ def test_end_to_end_price_range(controller):
     response = controller.handle_search(query_text="", price_min=10, price_max=20)
     assert "cards" in response
     for card in response["cards"]:
-        if card["price"]:
+        # Use price_min and price_max fields from new schema
+        price_min = card.get("price_min")
+        price_max = card.get("price_max")
+        if price_min is not None:
             try:
-                price_val = float(str(card["price"]).split()[0].replace(",", "."))
+                price_val = float(price_min)
                 assert 10 <= price_val <= 20
             except Exception:
                 pass  # Ignore non-numeric prices

@@ -10,12 +10,11 @@ class Deduper:
     """Detects and merges duplicate events."""
 
     def is_duplicate(self, a: Event, b: Event) -> bool:
-        """Return True if two events are duplicates."""
+        """Return True if two events are duplicates using new event schema fields."""
         try:
-            # Minimal attribute access for testability/coverage
             return (
-                getattr(a, "name", None) == getattr(b, "name", None)
-                and getattr(a, "date", None) == getattr(b, "date", None)
+                getattr(a, "event_name", None) == getattr(b, "event_name", None)
+                and getattr(a, "start_datetime", None) == getattr(b, "start_datetime", None)
             )
         except Exception as e:
             logging.getLogger(self.__class__.__name__).error(

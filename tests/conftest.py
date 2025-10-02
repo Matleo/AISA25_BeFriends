@@ -6,21 +6,46 @@ from datetime import date, datetime
 from befriends.domain.event import Event
 
 class DummyEvent:
-    def __init__(self, name, date, city, category, description=None, time_text=None, location=None, instagram=None, tags=None, price=None, id=None, region=None, venue=None, source_id=None):
+    def __init__(self, event_name, start_datetime, event_location, event_type=None, description=None, instagram=None, id=None, region=None, price_min=None, price_max=None, currency=None, organizer=None, dance_style=None, date_description=None):
         self.id = id or "dummy-id"
-        self.name = name
-        self.date = date
-        self.city = city
-        self.category = category
-        self.description = description
-        self.time_text = time_text
-        self.location = location
+        self.event_name = event_name
+        # Accept both str and datetime for start_datetime
+        if isinstance(start_datetime, str):
+            try:
+                from datetime import datetime
+                self.start_datetime = datetime.strptime(start_datetime, "%Y-%m-%d")
+            except Exception:
+                self.start_datetime = start_datetime
+        else:
+            self.start_datetime = start_datetime
+        self.end_datetime = None
+        self.recurrence_rule = None
+        self.date_description = date_description
+        self.event_type = event_type
+        self.dance_focus = None
+        self.dance_style = dance_style if dance_style is not None else ["music"]
+        self.price_min = price_min if price_min is not None else 20
+        self.price_max = price_max if price_max is not None else 20
+        self.currency = currency if currency is not None else "EUR"
+        self.pricing_type = None
+        self.price_category = None
+        self.audience_min = None
+        self.audience_max = None
+        self.audience_size_bucket = None
+        self.age_min = None
+        self.age_max = None
+        self.age_group_label = None
+        self.user_category = None
+        self.event_location = event_location
+        self.region = region if region is not None else (event_location if event_location else "Region")
+        self.season = None
+        self.cross_border_potential = None
+        self.organizer = organizer if organizer is not None else "Venue"
         self.instagram = instagram
-        self.tags = tags or []
-        self.price = price
-        self.region = region
-        self.venue = venue
-        self.source_id = source_id
+        self.event_link = None
+        self.event_link_fit = None
+        self.description = description
+        self.ingested_at = datetime.now()
 
     def __getitem__(self, key):
         return getattr(self, key)
@@ -29,11 +54,11 @@ class DummyEvent:
         return getattr(self, key, default)
 
     def to_summary(self):
-        summary = f"{self.name} on {self.date}"
-        if self.city:
-            summary += f" in {self.city}"
-        if self.category:
-            summary += f" [{self.category}]"
+        summary = f"{self.event_name} on {self.start_datetime}"
+        if self.event_location:
+            summary += f" in {self.event_location}"
+        if self.event_type:
+            summary += f" [{self.event_type}]"
         return summary
 
 @pytest.fixture
@@ -41,19 +66,36 @@ def make_event():
     def _make_event(**kwargs):
         base = dict(
             id="1",
-            name="Sample Event",
-            date=date(2025, 10, 1),
-            time_text=None,
-            location=None,
-            description=None,
-            city=None,
+            event_name="Sample Event",
+            start_datetime=datetime(2025, 10, 1, 20, 0),
+            end_datetime=None,
+            recurrence_rule=None,
+            date_description=None,
+            event_type=None,
+            dance_focus=None,
+            dance_style=None,
+            price_min=None,
+            price_max=None,
+            currency=None,
+            pricing_type=None,
+            price_category=None,
+            audience_min=None,
+            audience_max=None,
+            audience_size_bucket=None,
+            age_min=None,
+            age_max=None,
+            age_group_label=None,
+            user_category=None,
+            event_location=None,
             region=None,
-            source_id=None,
+            season=None,
+            cross_border_potential=None,
+            organizer=None,
+            instagram=None,
+            event_link=None,
+            event_link_fit=None,
+            description=None,
             ingested_at=datetime.now(),
-            category=None,
-            tags=None,
-            price=None,
-            venue=None,
         )
         base.update(kwargs)
         return Event(**base)

@@ -18,32 +18,44 @@ class ResponseFormatter:
         """
         lines = []
         for i, event in enumerate(events, 1):
-            time = getattr(event, 'start_datetime', None)
-            location = getattr(event, 'event_location', None)
-            instagram = getattr(event, 'instagram', None)
-            date_str = str(event.start_datetime.date()) if event.start_datetime else "n/a"
-            if with_weekday and event.start_datetime:
+            # Fix: handle dicts and str dates robustly
+            start_dt = getattr(event, 'start_datetime', None)
+            if isinstance(event, dict):
+                start_dt = event.get('start_datetime', None)
+                if isinstance(start_dt, str):
+                    try:
+                        from datetime import datetime
+                        start_dt = datetime.fromisoformat(start_dt)
+                    except Exception:
+                        pass
+            time = start_dt
+            date_str = str(start_dt.date()) if hasattr(start_dt, 'date') else str(start_dt) if start_dt else "n/a"
+            if with_weekday and start_dt and hasattr(start_dt, 'strftime'):
                 try:
-                    weekday = event.start_datetime.strftime("%A")
+                    weekday = start_dt.strftime("%A")
                     date_with_weekday = f"{date_str} ({weekday})"
                 except Exception:
                     date_with_weekday = date_str
             else:
                 date_with_weekday = date_str
-            name = getattr(event, 'event_name', '')
-            region = getattr(event, 'region', 'n/a')
-            event_type = getattr(event, 'event_type', 'n/a')
+            name = getattr(event, 'event_name', event.get('event_name', '')) if isinstance(event, dict) else getattr(event, 'event_name', '')
+            region = getattr(event, 'region', event.get('region', 'n/a')) if isinstance(event, dict) else getattr(event, 'region', 'n/a')
+            event_type = getattr(event, 'event_type', event.get('event_type', 'n/a')) if isinstance(event, dict) else getattr(event, 'event_type', 'n/a')
             line = f"{i}. {name} ({date_with_weekday}, {region}, {event_type})"
-            if time:
-                line += f" at {time.strftime('%H:%M') if hasattr(time, 'strftime') else time}"
+            if time and hasattr(time, 'strftime'):
+                line += f" at {time.strftime('%H:%M')}"
+            elif time:
+                line += f" at {time}"
+            location = getattr(event, 'event_location', event.get('event_location', None)) if isinstance(event, dict) else getattr(event, 'event_location', None)
             if location:
                 line += f" | {location}"
+            instagram = getattr(event, 'instagram', event.get('instagram', None)) if isinstance(event, dict) else getattr(event, 'instagram', None)
             if instagram:
                 handle = instagram.lstrip('@')
                 url = f"https://instagram.com/{handle}"
                 line += f" | IG: [{instagram}]({url})"
             lines.append(line)
-            desc = getattr(event, 'date_description', None)
+            desc = getattr(event, 'date_description', event.get('date_description', None)) if isinstance(event, dict) else getattr(event, 'date_description', None)
             if desc:
                 lines.append(f"   - {desc[:120]}{'...' if len(desc) > 120 else ''}")
         return "\n".join(lines)
@@ -60,26 +72,37 @@ class ResponseFormatter:
             return "(No events available)"
         lines = []
         for e in events:
-            time = getattr(e, 'start_datetime', None)
-            location = getattr(e, 'event_location', None)
-            instagram = getattr(e, 'instagram', None)
-            date_str = str(e.start_datetime.date()) if e.start_datetime else "n/a"
-            if e.start_datetime:
+            start_dt = getattr(e, 'start_datetime', None)
+            if isinstance(e, dict):
+                start_dt = e.get('start_datetime', None)
+                if isinstance(start_dt, str):
+                    try:
+                        from datetime import datetime
+                        start_dt = datetime.fromisoformat(start_dt)
+                    except Exception:
+                        pass
+            time = start_dt
+            date_str = str(start_dt.date()) if hasattr(start_dt, 'date') else str(start_dt) if start_dt else "n/a"
+            if start_dt and hasattr(start_dt, 'strftime'):
                 try:
-                    weekday = e.start_datetime.strftime("%A")
+                    weekday = start_dt.strftime("%A")
                     date_with_weekday = f"{date_str} ({weekday})"
                 except Exception:
                     date_with_weekday = date_str
             else:
                 date_with_weekday = date_str
-            name = getattr(e, 'event_name', '')
-            region = getattr(e, 'region', 'n/a')
-            event_type = getattr(e, 'event_type', 'n/a')
+            name = getattr(e, 'event_name', e.get('event_name', '')) if isinstance(e, dict) else getattr(e, 'event_name', '')
+            region = getattr(e, 'region', e.get('region', 'n/a')) if isinstance(e, dict) else getattr(e, 'region', 'n/a')
+            event_type = getattr(e, 'event_type', e.get('event_type', 'n/a')) if isinstance(e, dict) else getattr(e, 'event_type', 'n/a')
             line = f"- {name} ({date_with_weekday}, {region}, {event_type})"
-            if time:
-                line += f" at {time.strftime('%H:%M') if hasattr(time, 'strftime') else time}"
+            if time and hasattr(time, 'strftime'):
+                line += f" at {time.strftime('%H:%M')}"
+            elif time:
+                line += f" at {time}"
+            location = getattr(e, 'event_location', e.get('event_location', None)) if isinstance(e, dict) else getattr(e, 'event_location', None)
             if location:
                 line += f" | {location}"
+            instagram = getattr(e, 'instagram', e.get('instagram', None)) if isinstance(e, dict) else getattr(e, 'instagram', None)
             if instagram:
                 handle = instagram.lstrip('@')
                 url = f"https://instagram.com/{handle}"
@@ -98,7 +121,11 @@ class ResponseFormatter:
             if event.price_min is not None or event.price_max is not None:
                 summary += f" (Price: {event.price_min} - {event.price_max} {event.currency or ''})"
             if event.dance_style:
-                summary += f" Style: {event.dance_style}"
+                # Fix: handle both list and string for dance_style
+                if isinstance(event.dance_style, list):
+                    summary += f" Style: {', '.join(event.dance_style)}"
+                else:
+                    summary += f" Style: {event.dance_style}"
             lines.append(summary)
         if result.total > 5:
             lines.append(f"...and {result.total - 5} more.")
@@ -114,7 +141,7 @@ class ResponseFormatter:
                 "start_datetime": event.start_datetime.isoformat() if event.start_datetime else None,
                 "end_datetime": event.end_datetime.isoformat() if event.end_datetime else None,
                 "event_type": event.event_type,
-                "dance_style": event.dance_style,
+                "tags": event.dance_style if isinstance(event.dance_style, list) else [event.dance_style] if event.dance_style else [],
                 "price_min": event.price_min,
                 "price_max": event.price_max,
                 "currency": event.currency,

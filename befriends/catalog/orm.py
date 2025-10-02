@@ -5,7 +5,22 @@ from sqlalchemy import (
     Date,
     DateTime,
     Text,
+    TypeDecorator,
 )
+class StringList(TypeDecorator):
+    impl = String
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        if isinstance(value, list):
+            return ",".join(str(v) for v in value)
+        return str(value)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return []
+        return [v.strip() for v in value.split(",") if v.strip()]
 from sqlalchemy.orm import declarative_base, sessionmaker
 import uuid
 from befriends.domain.event import Event
@@ -25,7 +40,7 @@ class EventORM(Base):  # type: ignore[misc, valid-type]
     date_description = Column(String, nullable=True)
     event_type = Column(String, nullable=True)
     dance_focus = Column(String, nullable=True)
-    dance_style = Column(String, nullable=True)
+    dance_style = Column(StringList, nullable=True)
     price_min = Column(String, nullable=True)
     price_max = Column(String, nullable=True)
     currency = Column(String, nullable=True)

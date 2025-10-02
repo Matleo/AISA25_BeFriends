@@ -3,14 +3,13 @@ from befriends.response.formatter import ResponseFormatter
 from .conftest import DummyEvent
 
 def test_chat_event_list_basic():
-    events = [DummyEvent("Test Event", "2025-09-20", "Basel", "Music", description="A fun event.", time_text="20:00", location="Venue", instagram="@test")]
+    events = [DummyEvent("Test Event", "2025-09-20", "Basel", "Music", description="A fun event.", instagram="@test")]
     fmt = ResponseFormatter()
     result = fmt.chat_event_list(events)
     assert "Test Event" in result
     assert "Basel" in result
     assert "Music" in result
-    assert "20:00" in result
-    assert "Venue" in result
+    assert "00:00" in result  # For date-only, time is 00:00
     assert "@test" in result
 
 def test_chat_event_list_empty():
@@ -33,7 +32,7 @@ def test_chat_event_summary_empty():
 def test_to_narrative_and_to_cards():
     class DummyResult:
         def __init__(self):
-            self.events = [DummyEvent("Event1", "2025-09-20", "Basel", "Music", price=10, tags=["music"])]
+            self.events = [DummyEvent("Event1", "2025-09-20", "Basel", "Music")]
             self.total = 1
     fmt = ResponseFormatter()
     result = DummyResult()
@@ -45,7 +44,7 @@ def test_to_narrative_and_to_cards():
 
 def test_chat_event_list_with_long_description():
     desc = "A" * 200
-    events = [DummyEvent("LongDesc", "2025-09-20", "Basel", "Music", description=desc)]
+    events = [DummyEvent("LongDesc", "2025-09-20", "Basel", "Music", date_description=desc)]
     fmt = ResponseFormatter()
     result = fmt.chat_event_list(events)
     assert "..." in result
@@ -62,7 +61,7 @@ def test_chat_event_list_invalid_date():
 def test_chat_event_list_dict_event():
     # Should support dict event and missing fields
     fmt = ResponseFormatter()
-    events = [{"name": "DictEvent", "date": "2025-09-21", "city": "Zurich", "category": "Art"}]
+    events = [{"event_name": "DictEvent", "start_datetime": "2025-09-21", "event_location": "Zurich", "event_type": "Art"}]
     result = fmt.chat_event_list(events)
     assert "DictEvent" in result
     assert "Zurich" in result
@@ -77,7 +76,7 @@ def test_chat_event_summary_invalid_date():
 def test_chat_event_summary_dict_event():
     # Should support dict event and missing fields
     fmt = ResponseFormatter()
-    events = [{"name": "DictEvent", "date": "2025-09-21", "city": "Zurich", "category": "Art"}]
+    events = [{"event_name": "DictEvent", "start_datetime": "2025-09-21", "event_location": "Zurich", "event_type": "Art"}]
     result = fmt.chat_event_summary(events)
     assert "DictEvent" in result
     assert "Zurich" in result
