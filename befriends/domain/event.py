@@ -42,6 +42,9 @@ class Event:
     cross_border_potential: Optional[str]
     organizer: Optional[str]
     instagram: Optional[str]
+    event_link: Optional[str] = None
+    event_link_fit: Optional[str] = None
+    description: Optional[str] = None
     ingested_at: datetime.datetime = datetime.datetime.now()
 
     def to_summary(self) -> str:
@@ -83,6 +86,9 @@ class EventModel(BaseModel):
     cross_border_potential: Optional[str] = None
     organizer: Optional[str] = None
     instagram: Optional[str] = None
+    event_link: Optional[str] = None
+    event_link_fit: Optional[str] = None
+    description: Optional[str] = None
     ingested_at: datetime.datetime = datetime.datetime.now()
 
     model_config = {"from_attributes": True}

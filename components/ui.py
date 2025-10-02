@@ -72,7 +72,7 @@ def render_sidebar_filters(default_city=None):
         value=filters.get("date_to") if filters.get("date_to") else (datetime.date.today() + datetime.timedelta(days=30)),
         key="sidebar_date_to"
     )
-    city = st.sidebar.text_input("City", value=default_city, key="sidebar_city")
+    city = st.sidebar.text_input("City", value=default_city or "Basel (CH)", key="sidebar_city")
     category = st.sidebar.selectbox("Category", ["", "Music", "Sports", "Food & Drink", "Theater", "Comedy", "Family", "Outdoors", "Workshops", "Other"], key="sidebar_category")
     price_min = st.sidebar.number_input("Min price", min_value=0.0, value=0.0, step=1.0, key="sidebar_price_min")
     price_max = st.sidebar.number_input("Max price", min_value=0.0, value=0.0, step=1.0, key="sidebar_price_max")
@@ -137,14 +137,34 @@ def render_event_card(event: Dict[str, Any], key_prefix: str = "") -> None:
     type_pill = f'<span class="pill category {event_type.lower().replace(" ", "-")}">{event_type}</span>'
     price_pill = f'<span class="pill price">{price_label}</span>'
     # Description
-    description = event.get("description") or event.get("date_description") or "No description available."
+    import logging
+    description = event.get("description")
+    logging.info(f"[UI] render_event_card: event_name={event.get('event_name')}, description={description}")
+    if not description:
+        logging.warning(f"[UI] No description available for event: {event.get('event_name')}")
+        description = "No description available."
     # Instagram
     instagram = event.get("instagram")
     insta_btn = ""
     if instagram:
-        handle = instagram.lstrip("@")
-        url = f"https://instagram.com/{handle}"
-        insta_btn = f'<a href="{url}" target="_blank" rel="noopener noreferrer"><button class="icon" title="Instagram"><span style="font-size:1.2em;">📸</span></button></a>'
+        if instagram.startswith("http"):
+            url = instagram
+        else:
+            handle = instagram.lstrip("@")
+            url = f"https://instagram.com/{handle}"
+        # Use Instagram SVG logo for better appearance
+        insta_btn = f'<a href="{url}" target="_blank" rel="noopener noreferrer"><button class="icon" title="Instagram"><span style="font-size:1.2em; vertical-align:middle;">'
+        insta_btn += '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" style="vertical-align:middle;"><path fill="#E4405F" d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 2 .2 2.5.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.5.3 1.3.4 2.5.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 2-.4 2.5-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.5.2-1.3.3-2.5.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-2-.2-2.5-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.5-.3-1.3-.4-2.5C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.2-2 .4-2.5.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.5-.2 1.3-.3 2.5-.4C8.4 2.2 8.8 2.2 12 2.2zm0-2.2C8.7 0 8.3 0 7 .1c-1.3.1-2.2.2-3 .5-.8.3-1.5.7-2.1 1.3-.6.6-1 1.3-1.3 2.1-.3.8-.4 1.7-.5 3C.1 8.3 0 8.7 0 12c0 3.3.1 3.7.1 5 .1 1.3.2 2.2.5 3 .3.8.7 1.5 1.3 2.1.6.6 1.3 1 2.1 1.3.8.3 1.7.4 3 .5 1.3.1 1.7.1 5 .1s3.7-.1 5-.1c1.3-.1 2.2-.2 3-.5.8-.3 1.5-.7 2.1-1.3.6-.6 1-1.3 1.3-2.1.3-.8.4-1.7.5-3 .1-1.3.1-1.7.1-5s0-3.7-.1-5c-.1-1.3-.2-2.2-.5-3-.3-.8-.7-1.5-1.3-2.1-.6-.6-1.3-1-2.1-1.3-.8-.3-1.7-.4-3-.5C15.7.1 15.3 0 12 0z"/><circle fill="#E4405F" cx="12" cy="12" r="3.2"/><circle fill="#E4405F" cx="18.4" cy="5.6" r="1.1"/></svg>'
+        insta_btn += '</span></button></a>'
+    # Event Link
+        event_link = event.get("event_link")
+        import logging
+        logging.info(f"[UI] render_event_card: event_name={event.get('event_name')}, event_link={event_link}")
+        event_link_btn = ""
+        if not event_link:
+            logging.warning(f"[UI] No event_link for event: {event.get('event_name')}")
+        else:
+            event_link_btn = f'<a href="{event_link}" target="_blank" rel="noopener noreferrer"><button class="icon" title="Event Link"><span style="font-size:1.2em;">🔗</span></button></a>'
     # HTML
     html = (
         '<div class="event-card">'
@@ -158,10 +178,11 @@ def render_event_card(event: Dict[str, Any], key_prefix: str = "") -> None:
         + '</div>'
         + f'<div class="event-desc">{description}</div>'
         + '<div class="event-footer">'
-        + '<button class="primary">View & Book</button>'
+    # Only show one button: 'View & Book' with link if present
+    + (f'<a href="{event_link}" target="_blank" rel="noopener noreferrer"><button class="primary">View & Book</button></a>' if event_link else '<button class="primary">View & Book</button>')
         + '<div class="event-footer-actions">'
-        + '<button class="icon" title="Save">★</button>'
-        + '<button class="icon" title="Share">🔗</button>'
+    # Removed star button
+    # Removed duplicate button with no link
         + f'{insta_btn}'
         + '</div>'
         + '</div>'

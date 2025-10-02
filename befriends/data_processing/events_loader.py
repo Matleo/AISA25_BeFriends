@@ -73,6 +73,9 @@ def load_events_from_csv(csv_path: str) -> List[Event]:
                 cross_border_potential=row.get("cross_border_potential"),
                 organizer=row.get("organizer"),
                 instagram=row.get("instagram"),
+                event_link=row.get("event_link"),
+                event_link_fit=row.get("event_link_fit"),
+                description=row.get("description"),
                 ingested_at=datetime.now(),
             )
             events.append(event)

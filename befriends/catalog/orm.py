@@ -44,6 +44,9 @@ class EventORM(Base):  # type: ignore[misc, valid-type]
     cross_border_potential = Column(String, nullable=True)
     organizer = Column(String, nullable=True)
     instagram = Column(String, nullable=True)
+    event_link = Column(String, nullable=True)
+    event_link_fit = Column(String, nullable=True)
+    description = Column(Text, nullable=True)
     ingested_at = Column(DateTime, nullable=False)
 
     def to_domain(self) -> "Event":
@@ -76,6 +79,9 @@ class EventORM(Base):  # type: ignore[misc, valid-type]
             cross_border_potential=self.cross_border_potential,
             organizer=self.organizer,
             instagram=self.instagram,
+            event_link=self.event_link,
+            event_link_fit=self.event_link_fit,
+            description=self.description,
             ingested_at=self.ingested_at if isinstance(self.ingested_at, datetime) else datetime.now(),
         )
 
@@ -120,6 +126,9 @@ class EventORM(Base):  # type: ignore[misc, valid-type]
             cross_border_potential=event.cross_border_potential,
             organizer=event.organizer,
             instagram=event.instagram,
+            event_link=event.event_link,
+            event_link_fit=event.event_link_fit,
+            description=event.description,
             ingested_at=ingested_val,
         )
 

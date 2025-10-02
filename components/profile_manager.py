@@ -6,7 +6,7 @@ class ProfileManager:
     DEFAULT_PROFILE = {
         "name": "Karolina",
         "age": 33,
-        "city": "Basel",
+        "city": "Basel (CH)",
         "address": "Dornacherstr.",
         "interests": [
             "dance (zouk, salsa)",

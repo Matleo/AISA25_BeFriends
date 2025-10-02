@@ -50,7 +50,9 @@ class CatalogRepository:
         try:
             q = session.query(EventORM).order_by(EventORM.start_datetime.desc()).limit(limit)
             events = [e.to_domain() for e in q]
-            # Info log removed
+            import logging
+            for ev in events:
+                logging.info(f"[Repository] Event: name={getattr(ev, 'event_name', None)}, description={getattr(ev, 'description', None)}")
             return events
         except Exception as e:
             logger.error(f"Error during list_recent: {e}")
@@ -124,7 +126,9 @@ class CatalogRepository:
                     q = q.filter(EventORM.instagram == filters["instagram"])
             q = q.order_by(EventORM.start_datetime.desc())
             events = [e.to_domain() for e in q.all()]
-            # Info log removed
+            import logging
+            for ev in events:
+                logging.info(f"[Repository] Event: name={getattr(ev, 'event_name', None)}, description={getattr(ev, 'description', None)}")
             return events
         except Exception as e:
             logger.error(f"Error during search_text: {e}")
@@ -141,6 +145,8 @@ class CatalogRepository:
             # ... existing filtering logic ...
             q = q.order_by(EventORM.start_datetime.desc())
             events = [e.to_domain() for e in q.all()]
+            for ev in events:
+                logger.info(f"[Repository] Event: name={getattr(ev, 'event_name', None)}, description={getattr(ev, 'description', None)}")
             return events
         except Exception as e:
             self._get_logger().error(f"Error during search_events: {e}")

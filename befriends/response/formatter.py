@@ -122,7 +122,8 @@ class ResponseFormatter:
                 "event_location": event.event_location,
                 "organizer": event.organizer,
                 "instagram": getattr(event, "instagram", None),
-                "description": event.date_description,
+                "description": event.description,
+                "event_link": getattr(event, "event_link", None),
             }
             cards.append(card)
         return cards
