@@ -1,4 +1,3 @@
-
 """
 Recommendation service for event suggestions.
 Provides event recommendations based on user filters and profile.
@@ -11,6 +10,7 @@ from befriends.catalog.repository import CatalogRepository
 from befriends.domain.event import Event
 import datetime
 import logging
+import copy
 
 
 class RecommendationService:
@@ -49,13 +49,24 @@ class RecommendationService:
         Returns:
             List[Event]: Recommended events
         """
+        filters = copy.deepcopy(filters)  # Deepcopy FIRST, before any other code
+
         if today is None:
             today = datetime.date.today()
         try:
+            # Only set defaults if missing or None
+            if 'date_from' not in filters or filters['date_from'] is None:
+                filters['date_from'] = today
+            if 'date_to' not in filters or filters['date_to'] is None:
+                filters['date_to'] = today + datetime.timedelta(days=30)
+            if filters.get('region') is None and profile and profile.get('city'):
+                filters['region'] = profile['city']
+
             # If a free-text query is provided, use full-text search
             if text:
                 events = self.repository.search_text(text, filters)
                 return events[:max_events]
+
             # Otherwise, use filters/profile for recommendations
             events = self.repository.search_text("", filters)
             return events[:max_events]

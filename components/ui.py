@@ -31,12 +31,14 @@ def render_event_recommendations(
     # --- Patch: Always filter by user city (as region) and this week ---
     if profile.get("city") and not filters.get("region"):
         filters["region"] = profile["city"]
-    # Set date_from/date_to to this week (Monday-Sunday)
-    today = datetime.datetime.now().date()
-    start_of_week = today - datetime.timedelta(days=today.weekday())
-    end_of_week = start_of_week + datetime.timedelta(days=6)
-    filters["date_from"] = start_of_week
-    filters["date_to"] = end_of_week
+        # Only set date_from/date_to to this week (Monday-Sunday) if missing or None
+        today = datetime.datetime.now().date()
+        start_of_week = today - datetime.timedelta(days=today.weekday())
+        end_of_week = start_of_week + datetime.timedelta(days=6)
+        if "date_from" not in filters or filters["date_from"] is None:
+            filters["date_from"] = start_of_week
+        if "date_to" not in filters or filters["date_to"] is None:
+            filters["date_to"] = end_of_week
     try:
         repo = CatalogRepository()
         recommender = RecommendationService(repo)
@@ -55,25 +57,30 @@ def render_event_recommendations(
     except Exception as e:
         st.warning(f"Could not load event recommendations: {e}")
         st.info("No events found for your filters.")
-def render_sidebar_filters(default_city: str = "Vienna") -> Dict[str, Any]:
-    """
-    Render sidebar filter widgets and return a dict of filter values.
-
-    Args:
-        default_city (str): Default city to prefill in the city input.
-
-    Returns:
-        dict: Dictionary with keys: city, category, date_from, date_to, price_min, price_max, apply_filters
-    """
+def render_sidebar_filters(default_city=None):
+    # Logging removed
+    import streamlit as st
+    import datetime
+    filters = st.session_state.get("filters", {})
+    date_from = st.date_input(
+        "From",
+        value=filters.get("date_from") if filters.get("date_from") else datetime.date.today(),
+        key="sidebar_date_from"
+    )
+    date_to = st.date_input(
+        "To",
+        value=filters.get("date_to") if filters.get("date_to") else (datetime.date.today() + datetime.timedelta(days=30)),
+        key="sidebar_date_to"
+    )
     city = st.sidebar.text_input("City", value=default_city, key="sidebar_city")
     category = st.sidebar.selectbox("Category", ["", "Music", "Sports", "Food & Drink", "Theater", "Comedy", "Family", "Outdoors", "Workshops", "Other"], key="sidebar_category")
-    date_from = st.sidebar.date_input("From date", value=None, key="sidebar_date_from")
-    date_to = st.sidebar.date_input("To date", value=None, key="sidebar_date_to")
     price_min = st.sidebar.number_input("Min price", min_value=0.0, value=0.0, step=1.0, key="sidebar_price_min")
     price_max = st.sidebar.number_input("Max price", min_value=0.0, value=0.0, step=1.0, key="sidebar_price_max")
     apply_filters = st.sidebar.button("Apply Filters", key="sidebar_apply_filters")
     reset_filters = st.sidebar.button("Reset Filters", key="sidebar_reset_filters")
-    return {
+
+    # When returning filters, log them
+    sidebar_filters = {
         "city": city,
         "category": category,
         "date_from": date_from,
@@ -83,6 +90,7 @@ def render_sidebar_filters(default_city: str = "Vienna") -> Dict[str, Any]:
         "apply_filters": apply_filters,
         "reset_filters": reset_filters,
     }
+    return sidebar_filters
 
 
 def render_event_card(event: Dict[str, Any], key_prefix: str = "") -> None:
@@ -159,7 +167,6 @@ def render_event_card(event: Dict[str, Any], key_prefix: str = "") -> None:
         + '</div>'
         + '</div>'
     )
-    logging.info(f"[render_event_card] Rendered HTML: {html}")
     try:
         st.markdown(html, unsafe_allow_html=True)
     except Exception as e:

@@ -35,7 +35,7 @@ class CatalogRepository:
                     session.merge(obj)
                 count += 1
             session.commit()
-            logger.info(f"Upserted {count} events.")
+            # Info log removed
         except Exception as e:
             logger.error(f"Error during upsert: {e}")
             session.rollback()
@@ -50,7 +50,7 @@ class CatalogRepository:
         try:
             q = session.query(EventORM).order_by(EventORM.start_datetime.desc()).limit(limit)
             events = [e.to_domain() for e in q]
-            logger.info(f"Listed {len(events)} recent events.")
+            # Info log removed
             return events
         except Exception as e:
             logger.error(f"Error during list_recent: {e}")
@@ -64,10 +64,10 @@ class CatalogRepository:
         try:
             obj = session.get(EventORM, event_id)
             if obj:
-                logger.info(f"Found event by id: {event_id}")
+                # Info log removed
                 return obj.to_domain()
             else:
-                logger.info(f"No event found for id: {event_id}")
+                # Info log removed
                 return None
         except Exception as e:
             logger.error(f"Error during find_by_id: {e}")
@@ -124,13 +124,26 @@ class CatalogRepository:
                     q = q.filter(EventORM.instagram == filters["instagram"])
             q = q.order_by(EventORM.start_datetime.desc())
             events = [e.to_domain() for e in q.all()]
-            logger.info(
-                f"Search returned {len(events)} events for text '{text}' "
-                f"and filters {filters}."
-            )
+            # Info log removed
             return events
         except Exception as e:
             logger.error(f"Error during search_text: {e}")
+            raise
+        finally:
+            session.close()
+
+    def search_events(self, filters, *args, **kwargs):
+    # Entry log removed
+        # Do not modify filters here
+        session = self.Session()
+        try:
+            q = session.query(EventORM)
+            # ... existing filtering logic ...
+            q = q.order_by(EventORM.start_datetime.desc())
+            events = [e.to_domain() for e in q.all()]
+            return events
+        except Exception as e:
+            self._get_logger().error(f"Error during search_events: {e}")
             raise
         finally:
             session.close()

@@ -46,7 +46,6 @@ CHAT_STYLES_PATH = "assets/chat_styles.css"
 
 
 def get_event_summaries(filters, profile, limit=10):
-    """Get event summaries based on filters and profile."""
     filters = st.session_state.get("filters", filters)
     profile = st.session_state.get("profile", profile)
     try:
@@ -199,7 +198,7 @@ def render_chat_ui(chatbot_client):
         cols = st.columns([10,1])
         with cols[0]:
             user_input = st.text_input(
-                "",
+                "Ask a question",  # Non-empty label for accessibility
                 key="chat_input_box",
                 placeholder="Ask me anything about events, concerts, or activities...",
                 label_visibility="collapsed"
@@ -232,7 +231,6 @@ def main():
     st.session_state.setdefault("spinner_shown", False)
     st.session_state.setdefault("chatbot_error", None)
     # --- Session state initialization ---
-    logger.info("[MAIN] Starting main()")
     if "show_debug" not in st.session_state:
         st.session_state.show_debug = False
     if "show_sidebar" not in st.session_state:
@@ -247,7 +245,10 @@ def main():
         # Ensure the first request to the chatbot includes the current date in filters
         if "filters" not in st.session_state:
             st.session_state["filters"] = {}
-        st.session_state["filters"]["date_from"] = datetime.datetime.now().date()
+        today = datetime.datetime.now().date()
+        one_month_later = today + datetime.timedelta(days=30)
+        st.session_state["filters"]["date_from"] = today
+        st.session_state["filters"]["date_to"] = one_month_later
 
     # --- AppConfig and ChatbotClient setup ---
     try:
@@ -277,9 +278,7 @@ def main():
             sidebar_filters = {}
         # Only update st.session_state['filters'] if Apply or Reset is pressed
         if sidebar_filters.get("apply_filters"):
-            st.session_state["filters"].update({
-                k: v for k, v in sidebar_filters.items() if k not in ("apply_filters", "reset_filters")
-            })
+            st.session_state["filters"] = sidebar_filters.copy()
         elif sidebar_filters.get("reset_filters"):
             st.session_state["filters"] = {
                 "city": "",
@@ -373,13 +372,11 @@ def main():
         if st.session_state.get("chatbot_error"):
             st.error(f"Assistant error: {st.session_state['chatbot_error']}")
     with col_recs:
-    # logger.debug(f"[DEBUG] Rendering recommendations with filters: {st.session_state['filters']}")
         try:
             from components.recommendation_panel import RecommendationPanel
             RecommendationPanel.render(filters=st.session_state["filters"])
         except Exception as e:
             st.error(f"Failed to load recommendations: {e}")
-    logger.info("[MAIN] Finished main()")
 
 # Call main only after its definition
 if __name__ == "__main__":
