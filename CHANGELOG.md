@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.6.0] - 2025-10-03
+### Added
+- Enriched event data schema: added columns for event_date, event_time, weekday, month, country, city, latitude, longitude, and event_link.
+- Improved event descriptions for better readability.
+- Added new documentation (AISA Abgabe PDF, etc).
+
+### Changed
+- Refactored all event models, ORM, repository, and loader to support new schema.
+- Updated all tests to cover new event fields and ensure robust data handling.
+
+### Fixed
+- Corrected initial event date selection logic in UI.
+- Improved chatbot logic for special queries (e.g., Karolina praise).
+- All tests now pass with the new schema.
+
+### Release
+- This release completes the "event schema enrichment and migration" milestone for EventBot.
+
 
 ## [0.5.0] - 2025-09-22
 ### Added
