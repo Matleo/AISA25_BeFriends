@@ -47,6 +47,15 @@ class Event:
     description: Optional[str] = None
     ingested_at: datetime.datetime = datetime.datetime.now()
 
+    event_date: Optional[str] = None
+    event_time: Optional[str] = None
+    weekday: Optional[str] = None
+    month: Optional[str] = None
+    country: Optional[str] = None
+    city: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
     def to_summary(self) -> str:
         summary = f"{self.event_name} on {self.start_datetime}"
         if self.event_location:

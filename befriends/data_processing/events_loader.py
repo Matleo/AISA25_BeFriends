@@ -77,6 +77,14 @@ def load_events_from_csv(csv_path: str) -> List[Event]:
                 event_link_fit=row.get("event_link_fit"),
                 description=row.get("description"),
                 ingested_at=datetime.now(),
+                event_date=row.get("event_date"),
+                event_time=row.get("event_time"),
+                weekday=row.get("weekday"),
+                month=row.get("month"),
+                country=row.get("country"),
+                city=row.get("city"),
+                latitude=parse_float(row.get("latitude")),
+                longitude=parse_float(row.get("longitude")),
             )
             events.append(event)
     return events

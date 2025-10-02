@@ -63,6 +63,14 @@ class EventORM(Base):  # type: ignore[misc, valid-type]
     event_link_fit = Column(String, nullable=True)
     description = Column(Text, nullable=True)
     ingested_at = Column(DateTime, nullable=False)
+    event_date = Column(String, nullable=True)
+    event_time = Column(String, nullable=True)
+    weekday = Column(String, nullable=True)
+    month = Column(String, nullable=True)
+    country = Column(String, nullable=True)
+    city = Column(String, nullable=True)
+    latitude = Column(String, nullable=True)
+    longitude = Column(String, nullable=True)
 
     def to_domain(self) -> "Event":
         from datetime import datetime
@@ -98,6 +106,14 @@ class EventORM(Base):  # type: ignore[misc, valid-type]
             event_link_fit=self.event_link_fit,
             description=self.description,
             ingested_at=self.ingested_at if isinstance(self.ingested_at, datetime) else datetime.now(),
+            event_date=self.event_date,
+            event_time=self.event_time,
+            weekday=self.weekday,
+            month=self.month,
+            country=self.country,
+            city=self.city,
+            latitude=float(self.latitude) if self.latitude is not None else None,
+            longitude=float(self.longitude) if self.longitude is not None else None,
         )
 
     @staticmethod
@@ -145,6 +161,14 @@ class EventORM(Base):  # type: ignore[misc, valid-type]
             event_link_fit=event.event_link_fit,
             description=event.description,
             ingested_at=ingested_val,
+            event_date=event.event_date,
+            event_time=event.event_time,
+            weekday=event.weekday,
+            month=event.month,
+            country=event.country,
+            city=event.city,
+            latitude=str(event.latitude) if event.latitude is not None else None,
+            longitude=str(event.longitude) if event.longitude is not None else None,
         )
 
 
