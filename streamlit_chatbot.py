@@ -278,8 +278,12 @@ def main():
             sidebar_filters = {}
         # Only update st.session_state['filters'] if Apply or Reset is pressed
         if sidebar_filters.get("apply_filters"):
+            st.info(f"[DEBUG] Apply Filters pressed. sidebar_filters: {sidebar_filters}")
+            st.info(f"[DEBUG] Previous st.session_state['filters']: {st.session_state.get('filters')}")
             st.session_state["filters"] = sidebar_filters.copy()
+            st.info(f"[DEBUG] New st.session_state['filters']: {st.session_state['filters']}")
         elif sidebar_filters.get("reset_filters"):
+            st.info(f"[DEBUG] Reset Filters pressed.")
             st.session_state["filters"] = {
                 "city": "",
                 "category": "",
@@ -289,6 +293,7 @@ def main():
                 "price_max": 0.0,
                 "apply_filters": False,
             }
+            st.info(f"[DEBUG] st.session_state['filters'] after reset: {st.session_state['filters']}")
         if st.session_state.show_debug:
             st.markdown("---")
             st.markdown("### Debug Info")

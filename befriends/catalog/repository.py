@@ -50,9 +50,8 @@ class CatalogRepository:
         try:
             q = session.query(EventORM).order_by(EventORM.start_datetime.desc()).limit(limit)
             events = [e.to_domain() for e in q]
-            import logging
             for ev in events:
-                logging.info(f"[Repository] Event: name={getattr(ev, 'event_name', None)}, description={getattr(ev, 'description', None)}")
+                logger.info(f"[Repository] Event: name={getattr(ev, 'event_name', None)}, description={getattr(ev, 'description', None)}")
             return events
         except Exception as e:
             logger.error(f"Error during list_recent: {e}")
@@ -82,6 +81,7 @@ class CatalogRepository:
         from sqlalchemy import or_, cast, Float
         session = self.Session()
         try:
+            logger.info(f"[DEBUG] search_text called with text='{text}' and filters={filters}")
             q = session.query(EventORM)
             if text:
                 pattern = f"%{text}%"
@@ -96,36 +96,54 @@ class CatalogRepository:
                         EventORM.instagram.ilike(pattern),
                     )
                 )
+            logger.info(f"[DEBUG] search_text SQL after text filter: {str(q)}")
             if filters:
+                logger.info(f"[DEBUG] search_text applying filters: {filters}")
                 if filters.get("region"):
                     q = q.filter(EventORM.region == filters["region"])
+                    logger.info(f"[DEBUG] search_text filter region={filters['region']}")
                 if filters.get("event_type"):
                     q = q.filter(EventORM.event_type == filters["event_type"])
+                    logger.info(f"[DEBUG] search_text filter event_type={filters['event_type']}")
                 # Map date_from/date_to to strict date filtering if both are present and equal
                 if filters.get("date_from") and filters.get("date_to") and filters["date_from"] == filters["date_to"]:
                     from sqlalchemy import func
                     q = q.filter(func.date(EventORM.start_datetime) == filters["date_from"])
+                    logger.info(f"[DEBUG] search_text filter date_from=date_to={filters['date_from']}")
                 else:
                     if filters.get("date_from"):
                         q = q.filter(EventORM.start_datetime >= filters["date_from"])
+                        logger.info(f"[DEBUG] search_text filter date_from>={filters['date_from']}")
                     if filters.get("date_to"):
                         q = q.filter(EventORM.start_datetime <= filters["date_to"])
+                        logger.info(f"[DEBUG] search_text filter date_to<={filters['date_to']}")
                 if filters.get("start_datetime_from"):
                     q = q.filter(EventORM.start_datetime >= filters["start_datetime_from"])
+                    logger.info(f"[DEBUG] search_text filter start_datetime_from>={filters['start_datetime_from']}")
                 if filters.get("start_datetime_to"):
                     q = q.filter(EventORM.start_datetime <= filters["start_datetime_to"])
+                    logger.info(f"[DEBUG] search_text filter start_datetime_to<={filters['start_datetime_to']}")
                 if filters.get("price_min"):
                     q = q.filter(cast(EventORM.price_min, Float) >= filters["price_min"])
+                    logger.info(f"[DEBUG] search_text filter price_min>={filters['price_min']}")
                 if filters.get("price_max"):
                     q = q.filter(cast(EventORM.price_max, Float) <= filters["price_max"])
+                    logger.info(f"[DEBUG] search_text filter price_max<={filters['price_max']}")
                 if filters.get("dance_style"):
                     q = q.filter(EventORM.dance_style == filters["dance_style"])
+                    logger.info(f"[DEBUG] search_text filter dance_style={filters['dance_style']}")
                 if filters.get("organizer"):
                     q = q.filter(EventORM.organizer == filters["organizer"])
+                    logger.info(f"[DEBUG] search_text filter organizer={filters['organizer']}")
                 if filters.get("instagram"):
                     q = q.filter(EventORM.instagram == filters["instagram"])
+                    logger.info(f"[DEBUG] search_text filter instagram={filters['instagram']}")
             q = q.order_by(EventORM.start_datetime.desc())
+            logger.info(f"[DEBUG] search_text final SQL: {str(q)}")
             events = [e.to_domain() for e in q.all()]
+            logger.info(f"[DEBUG] search_text returned {len(events)} events")
+            for ev in events:
+                logger.info(f"[DEBUG] Event: name={getattr(ev, 'event_name', None)}, city={getattr(ev, 'city', None)}, region={getattr(ev, 'region', None)}, organizer={getattr(ev, 'organizer', None)}")
             import logging
             for ev in events:
                 logging.info(f"[Repository] Event: name={getattr(ev, 'event_name', None)}, description={getattr(ev, 'description', None)}")

@@ -63,12 +63,18 @@ class ChatbotService:
             return f"Today is {date_str}. Is there anything specific you're looking for or any event you'd like to know more about happening today? Feel free to ask!"
         logger = logging.getLogger("chatbot_service")
         filters = copy.deepcopy(filters)
+        logger.info(f"[DEBUG] get_response called with profile: {self.profile}")
+        logger.info(f"[DEBUG] get_response called with filters (before city/region logic): {filters}")
         # --- Ensure user profile city is mapped to region filter if region is not set ---
         if self.profile and isinstance(self.profile, dict):
             if not filters.get("region"):
                 city = self.profile.get("city")
                 if city:
                     filters["region"] = city
+        logger.info(f"[DEBUG] get_response filters (after city/region logic): {filters}")
+        logger.info(f"[DEBUG] get_response intent: {intent}")
+        logger.info(f"[DEBUG] get_response user_input: {user_input}")
+        logger.info(f"[DEBUG] get_response messages: {messages}")
         if intent == "greeting":
             return "Hey! Schön, von dir zu hören 😊 Wie kann ich dir heute helfen? Suchst du nach Events oder möchtest du einfach plaudern?"
         elif intent == "smalltalk":
@@ -116,7 +122,10 @@ class ChatbotService:
                 filters["date_from"] = today.date()
             if filters.get("city") and not any(e for e in repo.search_text("", filters)):
                 filters["city"] = ""
+            logger.info(f"[DEBUG] get_response filters (after date/city logic): {filters}")
+            logger.info(f"[DEBUG] get_response calling recommender.recommend_events with filters: {filters}")
             events = recommender.recommend_events(filters, self.profile, 10, today=today)
+            logger.info(f"[DEBUG] get_response recommender returned {len(events)} events")
             event_json = events_to_json(events, max_events=10)
             # Only trigger medieval Karolina prompt if user_input contains 'karolina', not event data
             if "karolina" in user_input_lc:
@@ -148,6 +157,7 @@ class ChatbotService:
                     messages=full_messages,
                 )
                 logger.info(f"[DEBUG] ChatbotClient response type: {type(response)}, value: {repr(response)}")
+                logger.info(f"[DEBUG] get_response ChatbotClient response: {response}")
             except Exception as e:
                 logger.error(f"[ERROR] Exception in chatbot_client.get_response: {e}")
                 response = f"[Error from chatbot backend: {e}]"

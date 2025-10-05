@@ -72,7 +72,17 @@ def render_sidebar_filters(default_city=None):
         value=filters.get("date_to") if filters.get("date_to") else (datetime.date.today() + datetime.timedelta(days=30)),
         key="sidebar_date_to"
     )
-    city = st.sidebar.text_input("City", value=default_city or "Basel (CH)", key="sidebar_city")
+    # Use selectbox for region, not free text
+    import sqlite3
+    db_path = "events.db"
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT DISTINCT region FROM events WHERE region IS NOT NULL AND region != '' ORDER BY region ASC;")
+            region_options = [row[0] for row in cur.fetchall()]
+    except Exception:
+        region_options = ["Basel (CH)"]
+    region = st.sidebar.selectbox("Region", options=region_options, index=region_options.index(default_city) if default_city in region_options else 0, key="sidebar_region")
     category = st.sidebar.selectbox("Category", ["", "Music", "Sports", "Food & Drink", "Theater", "Comedy", "Family", "Outdoors", "Workshops", "Other"], key="sidebar_category")
     price_min = st.sidebar.number_input("Min price", min_value=0.0, value=0.0, step=1.0, key="sidebar_price_min")
     price_max = st.sidebar.number_input("Max price", min_value=0.0, value=0.0, step=1.0, key="sidebar_price_max")
@@ -81,7 +91,7 @@ def render_sidebar_filters(default_city=None):
 
     # When returning filters, log them
     sidebar_filters = {
-        "city": city,
+        "region": region,
         "category": category,
         "date_from": date_from,
         "date_to": date_to,

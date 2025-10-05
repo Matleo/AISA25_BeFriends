@@ -7,7 +7,7 @@ from befriends.catalog.orm import get_engine_and_session, Base
 from befriends.catalog.orm import EventORM  # Ensure EventORM is registered
 from befriends.data_processing.events_loader import load_events_from_csv
 
-CSV_PATH = "befriends/data/10_events.csv"
+CSV_PATH = "befriends/data/11_events.csv"
 DB_URL = "sqlite:///events.db"
 
 def import_events_from_csv(csv_path=CSV_PATH, db_url=DB_URL, verbose=True):
