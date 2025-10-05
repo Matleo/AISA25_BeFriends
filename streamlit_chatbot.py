@@ -48,6 +48,10 @@ CHAT_STYLES_PATH = "assets/chat_styles.css"
 def get_event_summaries(filters, profile, limit=10):
     filters = st.session_state.get("filters", filters)
     profile = st.session_state.get("profile", profile)
+    # Patch: migrate region to region_standardized if present
+    if "region" in filters and "region_standardized" not in filters:
+        filters["region_standardized"] = filters["region"]
+        del filters["region"]
     try:
         repo = CatalogRepository()
         recommender = RecommendationService(repo)
@@ -237,6 +241,10 @@ def main():
         st.session_state.show_sidebar = False
     if "filters" not in st.session_state or not st.session_state.filters:
         st.session_state.filters = ProfileManager.get_default_filters()
+    # Patch: migrate region to region_standardized if present
+    if "region" in st.session_state.filters and "region_standardized" not in st.session_state.filters:
+        st.session_state.filters["region_standardized"] = st.session_state.filters["region"]
+        del st.session_state.filters["region"]
     if "apply_filters" not in st.session_state.filters or not st.session_state.filters["apply_filters"]:
         st.session_state.filters["apply_filters"] = True
     # --- Onboarding/welcome message logic ---
@@ -297,10 +305,12 @@ def main():
         if st.session_state.show_debug:
             st.markdown("---")
             st.markdown("### Debug Info")
+            # Patch: show region_standardized in debug info
             st.write({
                 "messages": st.session_state.get("messages"),
                 "filters": st.session_state.get("filters"),
                 "show_sidebar": st.session_state.get("show_sidebar"),
+                "region_standardized": st.session_state.get("filters", {}).get("region_standardized"),
             })
 
     # Main layout: chat and recommendations

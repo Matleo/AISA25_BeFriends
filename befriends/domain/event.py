@@ -38,6 +38,7 @@ class Event:
     user_category: Optional[str]
     event_location: Optional[str]
     region: Optional[str]
+    region_standardized: Optional[str]
     season: Optional[str]
     cross_border_potential: Optional[str]
     organizer: Optional[str]
@@ -55,6 +56,9 @@ class Event:
     city: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+
+    def __repr__(self):
+        return f"Event(id={self.id}, event_name={self.event_name}, region={self.region}, region_standardized={self.region_standardized})"
 
     def to_summary(self) -> str:
         summary = f"{self.event_name} on {self.start_datetime}"
