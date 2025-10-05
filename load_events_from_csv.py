@@ -1,13 +1,29 @@
 
 
+
 import os
+import glob
 import logging
 from befriends.catalog.repository import CatalogRepository
 from befriends.catalog.orm import get_engine_and_session, Base
 from befriends.catalog.orm import EventORM  # Ensure EventORM is registered
 from befriends.data_processing.events_loader import load_events_from_csv
 
-CSV_PATH = "befriends/data/11_events.csv"
+def get_latest_csv_path():
+    csv_files = glob.glob("befriends/data/*_events.csv")
+    if not csv_files:
+        return None
+    # Extract number prefix from filename, e.g. '12_events.csv' -> 12
+    def extract_number(f):
+        base = os.path.basename(f)
+        try:
+            return int(base.split("_")[0])
+        except Exception:
+            return -1
+    csv_files.sort(key=extract_number, reverse=True)
+    return csv_files[0]
+
+CSV_PATH = get_latest_csv_path() or "befriends/data/12_events.csv"
 DB_URL = "sqlite:///events.db"
 
 def import_events_from_csv(csv_path=CSV_PATH, db_url=DB_URL, verbose=True):
@@ -36,9 +52,14 @@ def import_events_from_csv(csv_path=CSV_PATH, db_url=DB_URL, verbose=True):
         logger.info(f"Loading events from CSV: {csv_path}")
         events = load_events_from_csv(csv_path)
         logger.info(f"Loaded {len(events)} events from CSV.")
-        count = repo.upsert(events)
+        # Filter out regions with less than 10 entries
+        from collections import Counter
+        region_counts = Counter([e.region_standardized for e in events if e.region_standardized])
+        valid_regions = {region for region, count in region_counts.items() if count >= 10}
+        filtered_events = [e for e in events if e.region_standardized in valid_regions]
+        logger.info(f"Filtered events: {len(filtered_events)} remain after removing regions with <10 entries.")
+        count = repo.upsert(filtered_events)
         logger.info(f"Upserted {count} events into DB.")
-
         if verbose:
             print(f"Imported {count} events from {csv_path}")
         return {"imported": count, "errors": []}

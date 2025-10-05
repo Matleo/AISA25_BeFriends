@@ -55,6 +55,7 @@ class EventORM(Base):  # type: ignore[misc, valid-type]
     user_category = Column(String, nullable=True)
     event_location = Column(String, nullable=True)
     region = Column(String, nullable=True)
+    region_standardized = Column(String, nullable=True)
     season = Column(String, nullable=True)
     cross_border_potential = Column(String, nullable=True)
     organizer = Column(String, nullable=True)
@@ -98,6 +99,7 @@ class EventORM(Base):  # type: ignore[misc, valid-type]
             user_category=self.user_category,
             event_location=self.event_location,
             region=self.region,
+            region_standardized=self.region_standardized,
             season=self.season,
             cross_border_potential=self.cross_border_potential,
             organizer=self.organizer,
@@ -153,6 +155,7 @@ class EventORM(Base):  # type: ignore[misc, valid-type]
             user_category=event.user_category,
             event_location=event.event_location,
             region=event.region,
+            region_standardized=getattr(event, "region_standardized", None),
             season=event.season,
             cross_border_potential=event.cross_border_potential,
             organizer=event.organizer,

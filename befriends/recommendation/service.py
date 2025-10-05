@@ -52,7 +52,7 @@ class RecommendationService:
         filters = copy.deepcopy(filters)  # Deepcopy FIRST, before any other code
         self.logger.info(f"[DEBUG] recommend_events called with filters: {filters}")
         self.logger.info(f"[DEBUG] recommend_events called with profile: {profile}")
-        self.logger.info(f"[DEBUG] recommend_events initial city: {filters.get('city')}, region: {filters.get('region')}")
+        self.logger.info(f"[DEBUG] recommend_events initial city: {filters.get('city')}, region_standardized: {filters.get('region_standardized')}")
         if today is None:
             today = datetime.date.today()
         try:
@@ -61,13 +61,13 @@ class RecommendationService:
                 filters['date_from'] = today
             if 'date_to' not in filters or filters['date_to'] is None:
                 filters['date_to'] = today + datetime.timedelta(days=30)
-            # NEW LOGIC: Always use region from filters if set
-            if filters.get('region') not in (None, '', ' '):
-                pass  # region already set by UI
-            # Otherwise, set region from profile if empty
+            # NEW LOGIC: Always use region_standardized from filters if set
+            if filters.get('region_standardized') not in (None, '', ' '):
+                pass  # region_standardized already set by UI
+            # Otherwise, set region_standardized from profile if empty
             elif profile and profile.get('city'):
-                filters['region'] = profile['city']
-            self.logger.info(f"[DEBUG] recommend_events after region/city logic: city={filters.get('city')}, region={filters.get('region')}")
+                filters['region_standardized'] = profile['city']
+            self.logger.info(f"[DEBUG] recommend_events after region/city logic: city={filters.get('city')}, region_standardized={filters.get('region_standardized')}")
             self.logger.info(f"[DEBUG] recommend_events filters after defaults: {filters}")
             # If a free-text query is provided, use full-text search
             if text:
@@ -75,14 +75,14 @@ class RecommendationService:
                 events = self.repository.search_text(text, filters)
                 self.logger.info(f"[DEBUG] recommend_events search_text('{text}') returned {len(events)} events")
                 for ev in events:
-                    self.logger.info(f"[DEBUG] Event: name={getattr(ev, 'event_name', None)}, city={getattr(ev, 'city', None)}, region={getattr(ev, 'region', None)}, organizer={getattr(ev, 'organizer', None)}")
+                    self.logger.info(f"[DEBUG] Event: name={getattr(ev, 'event_name', None)}, city={getattr(ev, 'city', None)}, region_standardized={getattr(ev, 'region_standardized', None)}, organizer={getattr(ev, 'organizer', None)}")
                 return events[:max_events]
             # Otherwise, use filters/profile for recommendations
             self.logger.info(f"[DEBUG] recommend_events using search_text with empty text and filters={filters}")
             events = self.repository.search_text("", filters)
             self.logger.info(f"[DEBUG] recommend_events search_text('') returned {len(events)} events")
             for ev in events:
-                self.logger.info(f"[DEBUG] Event: name={getattr(ev, 'event_name', None)}, city={getattr(ev, 'city', None)}, region={getattr(ev, 'region', None)}, organizer={getattr(ev, 'organizer', None)}")
+                self.logger.info(f"[DEBUG] Event: name={getattr(ev, 'event_name', None)}, city={getattr(ev, 'city', None)}, region_standardized={getattr(ev, 'region_standardized', None)}, organizer={getattr(ev, 'organizer', None)}")
             return events[:max_events]
         except Exception as e:
             self.logger.error(f"Error in recommend_events: {e}")

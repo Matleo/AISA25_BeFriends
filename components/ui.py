@@ -28,9 +28,9 @@ def render_event_recommendations(
             profile = json.load(f)
     except Exception:
         profile = {"city": "Basel", "interests": []}
-    # --- Patch: Always filter by user city (as region) and this week ---
-    if profile.get("city") and not filters.get("region"):
-        filters["region"] = profile["city"]
+    # --- Patch: Always filter by user city (as region_standardized) and this week ---
+    if profile.get("city") and not filters.get("region_standardized"):
+        filters["region_standardized"] = profile["city"]
         # Only set date_from/date_to to this week (Monday-Sunday) if missing or None
         today = datetime.datetime.now().date()
         start_of_week = today - datetime.timedelta(days=today.weekday())
@@ -78,27 +78,38 @@ def render_sidebar_filters(default_city=None):
     try:
         with sqlite3.connect(db_path) as conn:
             cur = conn.cursor()
-            cur.execute("SELECT DISTINCT region FROM events WHERE region IS NOT NULL AND region != '' ORDER BY region ASC;")
+            cur.execute("SELECT DISTINCT region_standardized FROM events WHERE region_standardized IS NOT NULL AND region_standardized != '' ORDER BY region_standardized ASC;")
             region_options = [row[0] for row in cur.fetchall()]
     except Exception:
         region_options = ["Basel (CH)"]
-    region = st.sidebar.selectbox("Region", options=region_options, index=region_options.index(default_city) if default_city in region_options else 0, key="sidebar_region")
+    def trigger_apply_filter():
+        st.session_state["region_changed"] = True
+
+    region_standardized = st.sidebar.selectbox(
+        "Region",
+        options=region_options,
+        index=region_options.index(default_city) if default_city in region_options else 0,
+        key="sidebar_region_standardized",
+        on_change=trigger_apply_filter
+    )
     category = st.sidebar.selectbox("Category", ["", "Music", "Sports", "Food & Drink", "Theater", "Comedy", "Family", "Outdoors", "Workshops", "Other"], key="sidebar_category")
     price_min = st.sidebar.number_input("Min price", min_value=0.0, value=0.0, step=1.0, key="sidebar_price_min")
     price_max = st.sidebar.number_input("Max price", min_value=0.0, value=0.0, step=1.0, key="sidebar_price_max")
-    apply_filters = st.sidebar.button("Apply Filters", key="sidebar_apply_filters")
+    apply_filters = st.sidebar.button("Apply Filters", key="sidebar_apply_filters") or st.session_state.get("region_changed", False)
+    if "region_changed" in st.session_state:
+        st.session_state["region_changed"] = False
     reset_filters = st.sidebar.button("Reset Filters", key="sidebar_reset_filters")
 
     # When returning filters, log them
     sidebar_filters = {
-        "region": region,
-        "category": category,
-        "date_from": date_from,
-        "date_to": date_to,
-        "price_min": price_min,
-        "price_max": price_max,
-        "apply_filters": apply_filters,
-        "reset_filters": reset_filters,
+        "region_standardized": region_standardized,
+    "category": category,
+    "date_from": date_from,
+    "date_to": date_to,
+    "price_min": price_min,
+    "price_max": price_max,
+    "apply_filters": apply_filters,
+    "reset_filters": reset_filters,
     }
     return sidebar_filters
 

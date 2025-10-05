@@ -90,7 +90,7 @@ class CatalogRepository:
                         EventORM.event_name.ilike(pattern),
                         EventORM.event_type.ilike(pattern),
                         EventORM.dance_style.ilike(pattern),
-                        EventORM.region.ilike(pattern),
+                        EventORM.region_standardized.ilike(pattern),
                         EventORM.event_location.ilike(pattern),
                         EventORM.organizer.ilike(pattern),
                         EventORM.instagram.ilike(pattern),
@@ -99,9 +99,9 @@ class CatalogRepository:
             logger.info(f"[DEBUG] search_text SQL after text filter: {str(q)}")
             if filters:
                 logger.info(f"[DEBUG] search_text applying filters: {filters}")
-                if filters.get("region"):
-                    q = q.filter(EventORM.region == filters["region"])
-                    logger.info(f"[DEBUG] search_text filter region={filters['region']}")
+                if filters.get("region_standardized"):
+                    q = q.filter(EventORM.region_standardized == filters["region_standardized"])
+                    logger.info(f"[DEBUG] search_text filter region_standardized={filters['region_standardized']}")
                 if filters.get("event_type"):
                     q = q.filter(EventORM.event_type == filters["event_type"])
                     logger.info(f"[DEBUG] search_text filter event_type={filters['event_type']}")
@@ -143,7 +143,7 @@ class CatalogRepository:
             events = [e.to_domain() for e in q.all()]
             logger.info(f"[DEBUG] search_text returned {len(events)} events")
             for ev in events:
-                logger.info(f"[DEBUG] Event: name={getattr(ev, 'event_name', None)}, city={getattr(ev, 'city', None)}, region={getattr(ev, 'region', None)}, organizer={getattr(ev, 'organizer', None)}")
+                logger.info(f"[DEBUG] Event: name={getattr(ev, 'event_name', None)}, city={getattr(ev, 'city', None)}, region_standardized={getattr(ev, 'region_standardized', None)}, organizer={getattr(ev, 'organizer', None)}")
             import logging
             for ev in events:
                 logging.info(f"[Repository] Event: name={getattr(ev, 'event_name', None)}, description={getattr(ev, 'description', None)}")
@@ -163,6 +163,7 @@ class CatalogRepository:
             # ... existing filtering logic ...
             q = q.order_by(EventORM.start_datetime.desc())
             events = [e.to_domain() for e in q.all()]
+            logger = self._get_logger()
             for ev in events:
                 logger.info(f"[Repository] Event: name={getattr(ev, 'event_name', None)}, description={getattr(ev, 'description', None)}")
             return events
