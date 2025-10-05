@@ -94,7 +94,7 @@ def render_sidebar_filters(default_city=None):
     )
     category = st.sidebar.selectbox("Category", ["", "Music", "Sports", "Food & Drink", "Theater", "Comedy", "Family", "Outdoors", "Workshops", "Other"], key="sidebar_category")
     price_min = st.sidebar.number_input("Min price", min_value=0.0, value=0.0, step=1.0, key="sidebar_price_min")
-    price_max = st.sidebar.number_input("Max price", min_value=0.0, value=0.0, step=1.0, key="sidebar_price_max")
+    price_max = st.sidebar.number_input("Max price", min_value=0.0, value=999.0, step=1.0, key="sidebar_price_max")
     apply_filters = st.sidebar.button("Apply Filters", key="sidebar_apply_filters") or st.session_state.get("region_changed", False)
     if "region_changed" in st.session_state:
         st.session_state["region_changed"] = False
