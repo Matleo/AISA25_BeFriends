@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.7.0] - 2025-11-XX
+### Added
+- Automatic event import from newest CSV (`befriends/data/11_events.csv`) at backend startup, ensuring up-to-date event data including SAK Lörrach and other regional events.
+- Debug logging for event import, repository actions, and recommendation logic to aid troubleshooting and transparency.
+- UI region filter now uses a select box populated from distinct regions in the database, preventing invalid or empty region selections.
+
+### Changed
+- Refactored backend region filtering logic: region is now consistently used for all event queries and recommendations, both in API and chatbot.
+- Recommendation service and chatbot logic updated to always use region from filters or user profile, ensuring correct event surfacing.
+- UI filter logic cleaned up for sidebar and recommendations panel; date filters default to current week when region is set.
+
+### Fixed
+- Events for SAK Lörrach and other regions are now reliably available and surfaced in the UI and API.
+- Selectable regions in the UI always correspond to available events.
+- Chatbot intent detection and event query logic improved for more accurate responses.
+
+### Release
+- This release completes the "region filtering and event import reliability" milestone for EventBot.
+- Tag: v0.7.0
+
 ## [0.6.0] - 2025-10-03
 ### Added
 - Enriched event data schema: added columns for event_date, event_time, weekday, month, country, city, latitude, longitude, and event_link.
