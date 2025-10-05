@@ -37,48 +37,56 @@ def parse_int(val):
 
 def load_events_from_csv(csv_path: str) -> List[Event]:
     events = []
+    import logging
     with open(csv_path, newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
+        expected_fields = [
+            "id", "event_name", "start_datetime", "end_datetime", "recurrence_rule", "date_description", "event_type", "dance_focus", "dance_style", "price_min", "price_max", "currency", "pricing_type", "price_category", "audience_min", "audience_max", "audience_size_bucket", "age_min", "age_max", "age_group_label", "user_category", "event_location", "region", "region_standardized", "season", "cross_border_potential", "organizer", "instagram", "event_link", "event_link_fit", "description", "ingested_at", "event_date", "event_time", "weekday", "month", "country", "city", "latitude", "longitude"
+        ]
         for row in reader:
             ingested_at_val = parse_datetime(row.get("ingested_at"))
             if ingested_at_val is None:
                 from datetime import datetime
                 ingested_at_val = datetime.now()
+            # Check for missing/unmapped fields
+            for field in expected_fields:
+                if field not in row and field.replace("_", "-") not in row:
+                    logging.warning(f"[CSV Loader] Missing or unmapped field: '{field}' in row: {row}")
             event = Event(
                 id=row.get("id"),
-                event_name=row.get("event_name", ""),
-                start_datetime=parse_datetime(row.get("start_datetime")),
-                end_datetime=parse_datetime(row.get("end_datetime")),
-                recurrence_rule=row.get("recurrence_rule"),
-                date_description=row.get("date_description"),
-                event_type=row.get("event_type"),
-                dance_focus=row.get("dance_focus"),
-                dance_style=parse_dance_style(row.get("dance_style")),
-                price_min=parse_float(row.get("price_min")),
-                price_max=parse_float(row.get("price_max")),
+                event_name=row.get("event_name") or row.get("event-name") or "",
+                start_datetime=parse_datetime(row.get("start_datetime") or row.get("start-datetime")),
+                end_datetime=parse_datetime(row.get("end_datetime") or row.get("end-datetime")),
+                recurrence_rule=row.get("recurrence_rule") or row.get("recurrence-rule"),
+                date_description=row.get("date_description") or row.get("date-description"),
+                event_type=row.get("event_type") or row.get("event-type"),
+                dance_focus=row.get("dance_focus") or row.get("dance-focus"),
+                dance_style=parse_dance_style(row.get("dance_style") or row.get("dance-style")),
+                price_min=parse_float(row.get("price_min") or row.get("price-min")),
+                price_max=parse_float(row.get("price_max") or row.get("price-max")),
                 currency=row.get("currency"),
-                pricing_type=row.get("pricing_type"),
-                price_category=row.get("price_category"),
-                audience_min=parse_int(row.get("audience_min")),
-                audience_max=parse_int(row.get("audience_max")),
-                audience_size_bucket=row.get("audience_size_bucket"),
-                age_min=parse_int(row.get("age_min")),
-                age_max=parse_int(row.get("age_max")),
-                age_group_label=row.get("age_group_label"),
-                user_category=row.get("user_category"),
-                event_location=row.get("event_location"),
+                pricing_type=row.get("pricing_type") or row.get("pricing-type"),
+                price_category=row.get("price_category") or row.get("price-category"),
+                audience_min=parse_int(row.get("audience_min") or row.get("audience-min")),
+                audience_max=parse_int(row.get("audience_max") or row.get("audience-max")),
+                audience_size_bucket=row.get("audience_size_bucket") or row.get("audience-size-bucket"),
+                age_min=parse_int(row.get("age_min") or row.get("age-min")),
+                age_max=parse_int(row.get("age_max") or row.get("age-max")),
+                age_group_label=row.get("age_group_label") or row.get("age-group-label"),
+                user_category=row.get("user_category") or row.get("user-category"),
+                event_location=row.get("event_location") or row.get("event-location"),
                 region=row.get("region"),
-                region_standardized=row.get("region_standardized"),
+                region_standardized=row.get("region_standardized") or row.get("region-standardized"),
                 season=row.get("season"),
-                cross_border_potential=row.get("cross_border_potential"),
+                cross_border_potential=row.get("cross_border_potential") or row.get("cross-border-potential"),
                 organizer=row.get("organizer"),
                 instagram=row.get("instagram"),
-                event_link=row.get("event_link"),
-                event_link_fit=row.get("event_link_fit"),
+                event_link=row.get("event_link") or row.get("event-link"),
+                event_link_fit=row.get("event_link_fit") or row.get("event-link-fit"),
                 description=row.get("description"),
                 ingested_at=ingested_at_val,
-                event_date=row.get("event_date"),
-                event_time=row.get("event_time"),
+                event_date=row.get("event_date") or row.get("event-date"),
+                event_time=row.get("event_time") or row.get("event-time"),
                 weekday=row.get("weekday"),
                 month=row.get("month"),
                 country=row.get("country"),

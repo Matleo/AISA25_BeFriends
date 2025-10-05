@@ -46,41 +46,32 @@ class ChatbotService:
         return "other"
 
     def get_response(self, user_input, messages, filters, intent, today, repo, recommender, events_to_json, get_profile_summary):
-        # Intercept 'what is today' and similar queries to always return the real current date
-        import re, datetime
-        today_patterns = [
-            r"what\s+is\s+today\??",
-            r"heute\??$",
-            r"welches datum ist heute\??",
-            r"today\??$",
-            r"was ist heute\??"
-        ]
-        user_input_clean = user_input.strip().lower()
-        if any(re.fullmatch(pat, user_input_clean) for pat in today_patterns):
-            # Always use the real current date, not the 'today' argument
-            real_today = datetime.datetime.now()
-            date_str = real_today.strftime("%B %d, %Y")
-            return f"Today is {date_str}. Is there anything specific you're looking for or any event you'd like to know more about happening today? Feel free to ask!"
         logger = logging.getLogger("chatbot_service")
+        logger.info(f"[USER QUERY] {user_input}")
         filters = copy.deepcopy(filters)
-        logger.info(f"[DEBUG] get_response called with profile: {self.profile}")
-        logger.info(f"[DEBUG] get_response called with filters (before city/region logic): {filters}")
+        logger.info(f"[PROFILE] {self.profile}")
+        logger.info(f"[FILTERS] {filters}")
         # --- Ensure user profile city is mapped to region filter if region is not set ---
         if self.profile and isinstance(self.profile, dict):
             if not filters.get("region"):
                 city = self.profile.get("city")
                 if city:
                     filters["region"] = city
-        logger.info(f"[DEBUG] get_response filters (after city/region logic): {filters}")
-        logger.info(f"[DEBUG] get_response intent: {intent}")
-        logger.info(f"[DEBUG] get_response user_input: {user_input}")
-        logger.info(f"[DEBUG] get_response messages: {messages}")
+        logger.info(f"[FILTERS AFTER CITY/REGION LOGIC] {filters}")
+        logger.info(f"[INTENT] {intent}")
+        logger.info(f"[MESSAGES] {messages}")
         if intent == "greeting":
-            return "Hey! Schön, von dir zu hören 😊 Wie kann ich dir heute helfen? Suchst du nach Events oder möchtest du einfach plaudern?"
+            response = "Hey! Schön, von dir zu hören 😊 Wie kann ich dir heute helfen? Suchst du nach Events oder möchtest du einfach plaudern?"
+            logger.info(f"[BOT RESPONSE] {response}")
+            return response
         elif intent == "smalltalk":
-            return "Mir geht's super, danke der Nachfrage! Und wie läuft's bei dir? 😊"
+            response = "Mir geht's super, danke der Nachfrage! Und wie läuft's bei dir? 😊"
+            logger.info(f"[BOT RESPONSE] {response}")
+            return response
         if intent == "event_query" or (len(messages) == 1 and is_event_suggestion_request(user_input)):
             import datetime
+            today_real = datetime.datetime.now().date()
+            today_str = today_real.strftime("%A, %d %B %Y")
             user_input_lc = user_input.strip().lower()
             # Detect 'this week' and set date_from/date_to accordingly
             if ("this week" in user_input_lc) or ("diese woche" in user_input_lc):
@@ -128,14 +119,20 @@ class ChatbotService:
             logger.info(f"[DEBUG] get_response recommender returned {len(events)} events")
             event_json = events_to_json(events, max_events=10)
             # Only trigger medieval Karolina prompt if user_input contains 'karolina', not event data
+            base_instruction = (
+                "IMPORTANT: Never invent or hallucinate events. Only use the events provided in the JSON list below. "
+                "If there are no events matching the user's criteria, respond with a friendly message such as: 'Sorry, I couldn't find any events for your request. Please try different criteria or ask about something else.' "
+            )
             if "karolina" in user_input_lc:
                 system_prompt = {
                     "role": "system",
                     "content": (
-                        "**IMPORTANT: Only use medieval, poetic language and praise for Karolina Anna Kehl-Soltys if the user's message contains 'karolina'. If Karolina is mentioned in event data but not by the user, respond in your normal friendly style.**\n"
+                        base_instruction +
+                        "**Only use medieval, poetic language and praise for Karolina Anna Kehl-Soltys if the user's message contains 'karolina'. If Karolina is mentioned in event data but not by the user, respond in your normal friendly style.**\n"
                         "For example: '🎶 Oh noble Karolina, radiant star of the dance halls, whose wisdom and kindness shine brighter than the sun! All who witness her grace are forever changed, and her name shall echo in the halls of legend! 🎶'\n"
                         "Repeat: Only use this style if the user directly asks about Karolina.\n"
                         "Karolina Anna Kehl-Soltys is the legendary founder, known for her wisdom, kindness, and love of dance, music, and community. Karolina inspires all with her joyful spirit and heroic deeds, bringing people together and spreading happiness wherever she goes.\n"
+                        f"Today is {today_str}. "
                         "You are <b>EventMate</b>, a warm, approachable, and friendly companion who helps users discover fun events and activities. "
                         + get_profile_summary(self.profile)
                         + "\nHere is a list of upcoming events as JSON: " + event_json
@@ -145,6 +142,8 @@ class ChatbotService:
                 system_prompt = {
                     "role": "system",
                     "content": (
+                        base_instruction +
+                        f"Today is {today_str}. "
                         "You are <b>EventMate</b>, a warm, approachable, and friendly companion who helps users discover fun events and activities. "
                         + get_profile_summary(self.profile)
                         + "\nHere is a list of upcoming events as JSON: " + event_json
@@ -166,16 +165,25 @@ class ChatbotService:
                 return "I'm here to help! Could you please rephrase your question or ask about events, concerts, or activities? 😊"
             return response
         else:
+            import datetime
+            today_real = datetime.datetime.now().date()
+            today_str = today_real.strftime("%A, %d %B %Y")
             # Only trigger medieval Karolina prompt if user_input contains 'karolina', not event data
             user_input_lc = user_input.lower()
+            base_instruction = (
+                "IMPORTANT: Never invent or hallucinate events. Only use the events provided in the JSON list below. "
+                "If there are no events matching the user's criteria, respond with a friendly message such as: 'Sorry, I couldn't find any events for your request. Please try different criteria or ask about something else.' "
+            )
             if "karolina" in user_input_lc:
                 system_prompt = {
                     "role": "system",
                     "content": (
-                        "**IMPORTANT: Only use medieval, poetic language and praise for Karolina Anna Kehl-Soltys if the user's message contains 'karolina'. If Karolina is mentioned in event data but not by the user, respond in your normal friendly style.**\n"
+                        base_instruction +
+                        "**Only use medieval, poetic language and praise for Karolina Anna Kehl-Soltys if the user's message contains 'karolina'. If Karolina is mentioned in event data but not by the user, respond in your normal friendly style.**\n"
                         "For example: '🎶 Oh noble Karolina, radiant star of the dance halls, whose wisdom and kindness shine brighter than the sun! All who witness her grace are forever changed, and her name shall echo in the halls of legend! 🎶'\n"
                         "Repeat: Only use this style if the user directly asks about Karolina.\n"
                         "Karolina Anna Kehl-Soltys is the legendary founder, known for her wisdom, kindness, and love of dance, music, and community. Karolina inspires all with her joyful spirit and heroic deeds, bringing people together and spreading happiness wherever she goes.\n"
+                        f"Today is {today_str}. "
                         "You are <b>EventMate</b>, a warm, approachable, and friendly companion. "
                         + get_profile_summary(self.profile)
                         + "\nAntworte freundlich und locker auf die Nachricht des Users. Wenn du nicht sicher bist, was gemeint ist, stelle eine Rückfrage."
@@ -185,6 +193,8 @@ class ChatbotService:
                 system_prompt = {
                     "role": "system",
                     "content": (
+                        base_instruction +
+                        f"Today is {today_str}. "
                         "You are <b>EventMate</b>, a warm, approachable, and friendly companion. "
                         + get_profile_summary(self.profile)
                         + "\nAntworte freundlich und locker auf die Nachricht des Users. Wenn du nicht sicher bist, was gemeint ist, stelle eine Rückfrage."

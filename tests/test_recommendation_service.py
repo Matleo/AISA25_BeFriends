@@ -31,6 +31,7 @@ class DummyRepo:
             user_category=None,
             event_location="Loc",
             region="Region",
+            region_standardized="RegionStd",
             season=None,
             cross_border_potential=None,
             organizer="Venue",

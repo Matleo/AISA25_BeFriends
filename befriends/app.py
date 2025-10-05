@@ -61,16 +61,16 @@ class Application:
 
 def create_app() -> FastAPI:
     """Create and configure FastAPI app, wiring controllers to endpoints."""
+    import logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s %(message)s')
+    logger = logging.getLogger("befriends.app")
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        result = import_events_from_csv(verbose=True)
-        print(
-            f"[Startup] Imported {result['imported']} events from CSV. "
-            f"Errors: {len(result['errors'])}"
-        )
+        result = import_events_from_csv(verbose=False)
+        logger.info(f"[Startup] Imported {result['imported']} events from CSV. Errors: {len(result['errors'])}")
         yield
 
-    app = FastAPI(title="Befriends API", version="1.0", lifespan=lifespan)
+    app = FastAPI(title="Befriends API", version="1.0", lifespan=lifespan, log_level="warning")
     # Allow CORS for local dev
     app.add_middleware(
         CORSMiddleware,

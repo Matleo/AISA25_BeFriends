@@ -138,7 +138,13 @@ class CatalogRepository:
                 if filters.get("instagram"):
                     q = q.filter(EventORM.instagram == filters["instagram"])
                     logger.info(f"[DEBUG] search_text filter instagram={filters['instagram']}")
-            q = q.order_by(EventORM.start_datetime.desc())
+            # Exclude past events by default (start_datetime >= today, date only)
+            import datetime
+            from sqlalchemy import func
+            today_date = datetime.date.today()
+            q = q.filter(func.date(EventORM.start_datetime) >= today_date)
+            # Order by ascending start_datetime (upcoming first)
+            q = q.order_by(EventORM.start_datetime.asc())
             logger.info(f"[DEBUG] search_text final SQL: {str(q)}")
             events = [e.to_domain() for e in q.all()]
             logger.info(f"[DEBUG] search_text returned {len(events)} events")
