@@ -61,12 +61,8 @@ cd AISA25_BeFriends
    pip install streamlit
    ```
 
-2. Start the event search UI:
-   ```sh
-   streamlit run streamlit_app.py
-   ```
 
-3. Alternatively, start the chatbot UI:
+2. Start the chatbot UI:
    ```sh
    streamlit run streamlit_chatbot.py
    ```
@@ -81,32 +77,6 @@ cd AISA25_BeFriends
 2. Trigger ingestion via the FastAPI admin endpoint:
    ```sh
    curl -X POST "http://localhost:8000/admin/reingest"
-   ```
-
----
-
-## Development
-
-1. Create and activate a virtual environment:
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   ```
-
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Start the backend API server:
-   ```bash
-   uvicorn main:app --reload
-   ```
-   (Replace `main:app` with your actual entrypoint if different)
-
-4. Start the Streamlit frontend:
-   ```bash
-   streamlit run streamlit_chatbot.py
    ```
 
 ---
@@ -156,7 +126,6 @@ requirements.txt
 
 ## Notes
 - The Streamlit app expects the FastAPI backend to be running at `http://localhost:8000` by default.
-- To change the API URL, edit the `API_URL` variable at the top of `streamlit_app.py`.
 - If you change the database schema, delete `events.db` before running tests or the backend.
 
 ---
