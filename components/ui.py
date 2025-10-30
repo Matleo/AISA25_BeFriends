@@ -179,15 +179,15 @@ def render_event_card(event: Dict[str, Any], key_prefix: str = "") -> None:
         insta_btn = f'<a href="{url}" target="_blank" rel="noopener noreferrer"><button class="icon" title="Instagram"><span style="font-size:1.2em; vertical-align:middle;">'
         insta_btn += '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" style="vertical-align:middle;"><path fill="#E4405F" d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 2 .2 2.5.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.5.3 1.3.4 2.5.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 2-.4 2.5-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.5.2-1.3.3-2.5.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-2-.2-2.5-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.5-.3-1.3-.4-2.5C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.2-2 .4-2.5.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.5-.2 1.3-.3 2.5-.4C8.4 2.2 8.8 2.2 12 2.2zm0-2.2C8.7 0 8.3 0 7 .1c-1.3.1-2.2.2-3 .5-.8.3-1.5.7-2.1 1.3-.6.6-1 1.3-1.3 2.1-.3.8-.4 1.7-.5 3C.1 8.3 0 8.7 0 12c0 3.3.1 3.7.1 5 .1 1.3.2 2.2.5 3 .3.8.7 1.5 1.3 2.1.6.6 1.3 1 2.1 1.3.8.3 1.7.4 3 .5 1.3.1 1.7.1 5 .1s3.7-.1 5-.1c1.3-.1 2.2-.2 3-.5.8-.3 1.5-.7 2.1-1.3.6-.6 1-1.3 1.3-2.1.3-.8.4-1.7.5-3 .1-1.3.1-1.7.1-5s0-3.7-.1-5c-.1-1.3-.2-2.2-.5-3-.3-.8-.7-1.5-1.3-2.1-.6-.6-1.3-1-2.1-1.3-.8-.3-1.7-.4-3-.5C15.7.1 15.3 0 12 0z"/><circle fill="#E4405F" cx="12" cy="12" r="3.2"/><circle fill="#E4405F" cx="18.4" cy="5.6" r="1.1"/></svg>'
         insta_btn += '</span></button></a>'
-    # Event Link
-        event_link = event.get("event_link")
-        import logging
-        logging.info(f"[UI] render_event_card: event_name={event.get('event_name')}, event_link={event_link}")
-        event_link_btn = ""
-        if not event_link:
-            logging.warning(f"[UI] No event_link for event: {event.get('event_name')}")
-        else:
-            event_link_btn = f'<a href="{event_link}" target="_blank" rel="noopener noreferrer"><button class="icon" title="Event Link"><span style="font-size:1.2em;">🔗</span></button></a>'
+    # Event Link (always assign, outside Instagram block)
+    event_link = event.get("event_link")
+    import logging
+    logging.info(f"[UI] render_event_card: event_name={event.get('event_name')}, event_link={event_link}")
+    event_link_btn = ""
+    if not event_link:
+        logging.warning(f"[UI] No event_link for event: {event.get('event_name')}")
+    else:
+        event_link_btn = f'<a href="{event_link}" target="_blank" rel="noopener noreferrer"><button class="icon" title="Event Link"><span style="font-size:1.2em;">🔗</span></button></a>'
     # HTML
     html = (
         '<div class="event-card">'
