@@ -2,6 +2,8 @@
 Data processing module for event ingestion and normalization (new schema).
 """
 import csv
+
+import logging
 from datetime import datetime
 from typing import List, Optional
 
@@ -37,21 +39,20 @@ def parse_int(val):
 
 def load_events_from_csv(csv_path: str) -> List[Event]:
     events = []
-    import logging
     with open(csv_path, newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
         expected_fields = [
-            "id", "event_name", "start_datetime", "end_datetime", "recurrence_rule", "date_description", "event_type", "dance_focus", "dance_style", "price_min", "price_max", "currency", "pricing_type", "price_category", "audience_min", "audience_max", "audience_size_bucket", "age_min", "age_max", "age_group_label", "user_category", "event_location", "region", "region_standardized", "season", "cross_border_potential", "organizer", "instagram", "event_link", "event_link_fit", "description", "ingested_at", "event_date", "event_time", "weekday", "month", "country", "city", "latitude", "longitude"
+            "event_name", "start_datetime", "end_datetime", "recurrence_rule", "date_description", "event_type", "dance_focus", "dance_style", "price_min", "price_max", "currency", "pricing_type", "price_category", "audience_min", "audience_max", "audience_size_bucket", "age_min", "age_max", "age_group_label", "user_category", "event_location", "region", "region_standardized", "season", "cross_border_potential", "organizer", "instagram", "event_link", "event_link_fit", "description", "ingested_at", "event_date", "event_time", "weekday", "month", "country", "city", "latitude", "longitude"
         ]
         for row in reader:
             ingested_at_val = parse_datetime(row.get("ingested_at"))
             if ingested_at_val is None:
-                from datetime import datetime
-                ingested_at_val = datetime.now()
+                row["ingested_at"] = datetime.now()
             # Check for missing/unmapped fields
             for field in expected_fields:
                 if field not in row and field.replace("_", "-") not in row:
                     logging.warning(f"[CSV Loader] Missing or unmapped field: '{field}' in row: {row}")
+            
             price_min = parse_float(row.get("price_min") or row.get("price-min"))
             price_max = parse_float(row.get("price_max") or row.get("price-max"))
             if price_min is None:
@@ -90,7 +91,7 @@ def load_events_from_csv(csv_path: str) -> List[Event]:
                 event_link=row.get("event_link") or row.get("event-link"),
                 event_link_fit=row.get("event_link_fit") or row.get("event-link-fit"),
                 description=row.get("description"),
-                ingested_at=ingested_at_val,
+                ingested_at=row.get("ingested_at"),
                 event_date=row.get("event_date") or row.get("event-date"),
                 event_time=row.get("event_time") or row.get("event-time"),
                 weekday=row.get("weekday"),
