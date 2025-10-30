@@ -1,27 +1,30 @@
-import logging
-import datetime
-import streamlit as st
-import logging
 
-# Setup general logging
+import streamlit as st
+st.set_page_config(page_title="EventMate", page_icon="💬", layout="wide")
+import logging
+# Setup logging for debugging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[logging.StreamHandler()]
 )
 logger = logging.getLogger("streamlit_chatbot")
+logger.setLevel(logging.INFO)
 
-def get_chatbot_today():
-    # Always return the current datetime for chatbot logic
-    import datetime
-    return datetime.datetime.now()
-from components.ui import render_event_recommendations, render_sidebar_filters
+# --- Imports ---
+import html
+import uuid
+import datetime
+import json
+from pathlib import Path
+from components.ui import render_sidebar_filters
 from components.chat_ui import (
     render_chat_card_header,
     render_chat_card_container_start,
     render_chat_card_container_end,
     render_spinner,
     render_onboarding_and_quick_replies,
+    render_chat_bubble,
 )
 from befriends.recommendation.service import RecommendationService
 from befriends.catalog.repository import CatalogRepository
@@ -30,25 +33,23 @@ from befriends.common.config import AppConfig
 from befriends.response.formatter import ResponseFormatter
 from befriends.response.event_json import events_to_json
 from components.profile_manager import ProfileManager
-from components.chat_ui import render_chat_bubble
 from components.chatbot_service import ChatbotService
-import re
-import html
-import json
-from pathlib import Path
-import uuid
 
-# Asset file path constants
+# --- Constants ---
 CHAT_HEADER_PATH = "assets/chat_header.html"
 CHAT_HISTORY_CONTAINER_PATH = "assets/chat_history_container.html"
 CHAT_STYLES_PATH = "assets/chat_styles.css"
 
+# --- Utility Functions ---
+def get_chatbot_today():
+    return datetime.datetime.now()
+
 
 
 def get_event_summaries(filters, profile, limit=10):
+    """Get event summaries for recommendations."""
     filters = st.session_state.get("filters", filters)
     profile = st.session_state.get("profile", profile)
-    # Patch: migrate region to region_standardized if present
     if "region" in filters and "region_standardized" not in filters:
         filters["region_standardized"] = filters["region"]
         del filters["region"]
@@ -61,90 +62,22 @@ def get_event_summaries(filters, profile, limit=10):
     except Exception:
         return "(No events available)"
 def get_profile_summary(profile):
+    """Format profile summary for display."""
     return (
         f"Age: {profile['age']}, City: {profile['city']}. "
         f"Interests: {', '.join(profile['interests'])}."
     )
 
-# Setup general logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler()]
-)
-# ...existing code...
 
-
-
-
-# --- Profile management ---
-class ProfileManager:
-    DEFAULT_PROFILE = {
-        "name": "Karolina",
-        "age": 33,
-        "city": "Basel",
-        "address": "Dornacherstr.",
-        "interests": [
-            "dance (zouk, salsa)",
-            "water sports",
-            "swimming in the Rhine",
-            "being around water",
-            "music (guitar, ukulele)",
-            "concerts",
-            "festivals",
-            "jam sessions",
-            "dogs",
-            "kids",
-            "fun social activities",
-            "outdoor activities",
-            "dog-friendly gatherings",
-            "cultural festivals"
-        ]
-    }
-
-    @staticmethod
-    def load_profile(profile_path: str = "karolina_profile.json") -> dict:
-        profile_file = Path(profile_path)
-        try:
-            if profile_file.exists():
-                with open(profile_file, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            st.warning(f"Profile file {profile_path} not found. Using fallback profile.")
-        except Exception as e:
-            st.warning(f"Could not load profile: {e}. Using fallback profile.")
-        return ProfileManager.DEFAULT_PROFILE.copy()
-
-    @staticmethod
-    def ensure_profile_in_session():
-        if "profile" not in st.session_state:
-            st.session_state["profile"] = ProfileManager.load_profile()
-        return st.session_state["profile"]
-
-    @staticmethod
-    def get_interest_keywords() -> list:
-        """Return keywords for filtering or boosting recommendations."""
-        return [
-            "dance", "zouk", "salsa", "water", "swimming", "Rhine", "music", "guitar", "ukulele",
-            "concert", "festival", "jam", "dog", "kids", "outdoor", "social", "dog-friendly", "cultural"
-        ]
-
-# Patch: ensure ProfileManager is reloaded and get_default_filters is available
-import importlib
-import components.profile_manager
-importlib.reload(components.profile_manager)
-ProfileManager = components.profile_manager.ProfileManager
-
-
-# --- Chat UI logic extracted for clarity ---
+# --- Chat UI Rendering ---
 def render_chat_ui(chatbot_client):
-    # Only render chat history and input UI. No state mutation or message processing here.
+    """Render chat history, input, and spinner if needed."""
     try:
         with open(CHAT_HEADER_PATH) as f:
             st.markdown(f.read(), unsafe_allow_html=True)
     except Exception:
         st.warning("Could not load chat header asset.")
     render_chat_card_container_start()
-    # Render chat history
     try:
         with open(CHAT_HISTORY_CONTAINER_PATH) as f:
             st.markdown(f.read(), unsafe_allow_html=True)
@@ -159,23 +92,15 @@ def render_chat_ui(chatbot_client):
         bubble = render_chat_bubble(role, content, timestamp, show_label)
         st.markdown(bubble, unsafe_allow_html=True)
         prev_role = role
-    if st.session_state.get("is_typing"):
-        from components.chat_ui import render_spinner
-        render_spinner()
     st.markdown("</div>", unsafe_allow_html=True)
-    # Inject enhanced CSS for chat layout
     try:
         with open(CHAT_STYLES_PATH) as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     except Exception:
         st.warning("Could not load chat styles asset.")
-    # --- Chat input area ---
-    # Show onboarding UI if chat history is empty
     if len(st.session_state["messages"]) == 0:
-        from components.chat_ui import render_onboarding_and_quick_replies
         render_onboarding_and_quick_replies()
-
-    # Standard Streamlit chat input
+    # Chat input area CSS
     st.markdown("""
     <style>
     .chat-input-bar { display: flex; align-items: center; background: #f7f8fa; border-radius: 2em; box-shadow: 0 2px 8px #0001; border: 1.5px solid #e3f2fd; padding: 0.1em 1.2em 0.1em 1.2em; margin: 0.5em 0 0.2em 0; min-height: 3.2em; }
@@ -189,15 +114,11 @@ def render_chat_ui(chatbot_client):
     .chat-mic-btn[title]:hover { color: #1976d2; }
     </style>
     """, unsafe_allow_html=True)
-    import streamlit.components.v1 as components
-    # Use a form to allow Enter-to-send
-    import streamlit.components.v1 as components
-    # Use a form to allow Enter-to-send
-    # Clear input if flag is set, before widget is rendered
+    # Clear input if flag is set
     if st.session_state.get("clear_input", False):
         st.session_state["chat_input_box"] = ""
         st.session_state["clear_input"] = False
-
+    # Chat input form
     with st.form(key="chat_input_form_unique"):
         cols = st.columns([10,1])
         with cols[0]:
@@ -216,82 +137,79 @@ def render_chat_ui(chatbot_client):
             if user_input.strip():
                 st.session_state["pending_user_message"] = user_input.strip()
                 st.session_state["clear_input"] = True
-                st.write("DEBUG: Form submitted, message sent.")
+                logger.info("[TRACE] Form submitted, message sent.")
                 st.rerun()
             else:
                 st.warning("Please enter a message before sending.")
-    render_chat_card_container_end()
 
 def append_message(role, content):
-    import datetime
+    """Append a message to chat history."""
     now_str = datetime.datetime.now().strftime("%H:%M")
     st.session_state["messages"].append({"role": role, "content": content, "timestamp": now_str})
 
 # --- Main app entrypoint ---
 def main():
-    # --- Ensure all state machine keys are always present ---
-    st.session_state.setdefault("pending_user_message", None)
-    st.session_state.setdefault("is_typing", False)
-    st.session_state.setdefault("spinner_shown", False)
-    st.session_state.setdefault("chatbot_error", None)
-    # --- Session state initialization ---
-    if "show_debug" not in st.session_state:
-        st.session_state.show_debug = False
-    if "show_sidebar" not in st.session_state:
-        st.session_state.show_sidebar = False
+    logger.info("Streamlit EventMate app started.")
+    logger.info(f"Session state: {dict(st.session_state)}")
+    """Main entrypoint for Streamlit chatbot app."""
+    # --- State Initialization ---
+    # Robust session state initialization
+    for key, default in [
+        ("pending_user_message", None),
+        ("is_typing", False),
+        ("spinner_shown", False),
+        ("chatbot_error", None),
+        ("show_debug", False),
+        ("show_sidebar", False),
+        ("messages", []),
+    ]:
+        if key not in st.session_state:
+            st.session_state[key] = default
     if "filters" not in st.session_state or not st.session_state.filters:
         st.session_state.filters = ProfileManager.get_default_filters()
-    # Patch: migrate region to region_standardized if present
     if "region" in st.session_state.filters and "region_standardized" not in st.session_state.filters:
         st.session_state.filters["region_standardized"] = st.session_state.filters["region"]
         del st.session_state.filters["region"]
     if "apply_filters" not in st.session_state.filters or not st.session_state.filters["apply_filters"]:
         st.session_state.filters["apply_filters"] = True
-    # --- Onboarding/welcome message logic ---
-    if "messages" not in st.session_state or not st.session_state.messages:
-        st.session_state["messages"] = []
-        # Ensure the first request to the chatbot includes the current date in filters
-        if "filters" not in st.session_state:
-            st.session_state["filters"] = {}
+    if not st.session_state["messages"]:
         today = datetime.datetime.now().date()
         one_month_later = today + datetime.timedelta(days=30)
         st.session_state["filters"]["date_from"] = today
         st.session_state["filters"]["date_to"] = one_month_later
 
     # --- AppConfig and ChatbotClient setup ---
+    chatbot_client = None
+    chatbot_init_error = None
     try:
         config = AppConfig.from_env()
         chatbot_client = ChatbotClient(ChatbotConfig(config))
+        logger.info("ChatbotClient initialized.")
     except Exception as e:
-        st.error(f"Failed to initialize chatbot: {e}. Please check your configuration and try again.")
-        logger.error(f"[MAIN] Failed to initialize chatbot: {e}")
-        return
+        chatbot_init_error = e
+        logger.error(f"Chatbot init error: {e}")
 
     # --- Layout ---
-    st.set_page_config(page_title="EventMate", page_icon="💬", layout="wide")
-    # --- Robust error handling for custom CSS ---
     try:
         with open("static/eventbot.css") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     except Exception as e:
         st.warning(f"Could not load custom CSS: {e}. The chat UI may look less polished.")
 
-    # Sidebar for filters and debug
+    # --- Sidebar ---
     with st.sidebar:
         st.markdown("## EventBot Filters")
         try:
             sidebar_filters = render_sidebar_filters(default_city=ProfileManager.get_default_city())
         except Exception as e:
             st.error(f"Failed to load sidebar filters: {e}")
+            logger.error(f"Sidebar filter error: {e}")
             sidebar_filters = {}
-        # Only update st.session_state['filters'] if Apply or Reset is pressed
         if sidebar_filters.get("apply_filters"):
-            st.info(f"[DEBUG] Apply Filters pressed. sidebar_filters: {sidebar_filters}")
-            st.info(f"[DEBUG] Previous st.session_state['filters']: {st.session_state.get('filters')}")
+            logger.info("Sidebar: Apply filters pressed.")
             st.session_state["filters"] = sidebar_filters.copy()
-            st.info(f"[DEBUG] New st.session_state['filters']: {st.session_state['filters']}")
         elif sidebar_filters.get("reset_filters"):
-            st.info(f"[DEBUG] Reset Filters pressed.")
+            logger.info("Sidebar: Reset filters pressed.")
             st.session_state["filters"] = {
                 "city": "",
                 "category": "",
@@ -301,11 +219,9 @@ def main():
                 "price_max": 0.0,
                 "apply_filters": False,
             }
-            st.info(f"[DEBUG] st.session_state['filters'] after reset: {st.session_state['filters']}")
         if st.session_state.show_debug:
             st.markdown("---")
             st.markdown("### Debug Info")
-            # Patch: show region_standardized in debug info
             st.write({
                 "messages": st.session_state.get("messages"),
                 "filters": st.session_state.get("filters"),
@@ -313,90 +229,90 @@ def main():
                 "region_standardized": st.session_state.get("filters", {}).get("region_standardized"),
             })
 
-    # Main layout: chat and recommendations
+    # --- Main Chat and Recommendations Layout ---
     col_chat, col_recs = st.columns([1.35, 0.95], gap="large")
-    with col_chat:
-        # --- LOG STATE ---
-    # logger.debug(f"[STATE] pending_user_message={st.session_state.get('pending_user_message')}, is_typing={st.session_state.get('is_typing')}, spinner_shown={st.session_state.get('spinner_shown')}, messages={len(st.session_state.get('messages', []))}")
-        # Robust state machine for chat interaction
-        pending_user_message = st.session_state.get("pending_user_message", None)
-        is_typing = st.session_state.get("is_typing", False)
-        spinner_shown = st.session_state.get("spinner_shown", False)
-        error_message = st.session_state.get("chatbot_error", None)
+    logger.info("[TRACE] Entered main UI rendering block.")
+    pending_user_message = st.session_state.get("pending_user_message", None)
+    is_typing = st.session_state.get("is_typing", False)
+    spinner_shown = st.session_state.get("spinner_shown", False)
+    error_message = st.session_state.get("chatbot_error", None)
+    logger.info(f"[TRACE] State: pending_user_message={pending_user_message}, is_typing={is_typing}, spinner_shown={spinner_shown}, error_message={error_message}")
 
-        # Step 1: If there's a pending user message, append it and start typing
+    if chatbot_init_error:
+        logger.info("[TRACE] chatbot_init_error detected, rendering error UI.")
+        with col_chat:
+            st.error(f"Failed to initialize chatbot: {chatbot_init_error}. Please check your configuration and try again.")
+            logger.error(f"Chatbot init error: {chatbot_init_error}")
+    else:
+        # State machine: only mutate state and rerun
+        logger.info("[TRACE] Entered state machine block.")
         if pending_user_message and not is_typing:
-            logger.info(f"[USER] Appending message: {pending_user_message}")
+            logger.info(f"[TRACE] State: User submitted message, triggering rerun.")
             safe_input = html.escape(pending_user_message)
             append_message("user", safe_input)
             st.session_state["is_typing"] = True
             st.session_state["pending_user_message"] = None
-            st.session_state["spinner_shown"] = False
-            st.session_state["chatbot_error"] = None
-            st.rerun()
-
-        # Step 2: If is_typing and spinner not shown, show spinner
-        if st.session_state.get("is_typing", False) and not st.session_state.get("spinner_shown", False):
-            # Spinner state, not needed in logs
             st.session_state["spinner_shown"] = True
-            render_chat_ui(chatbot_client)
+            st.session_state["chatbot_error"] = None
+            logger.info(f"[TRACE] State updated, calling st.rerun().")
             st.rerun()
-
-        # Step 3: If is_typing and spinner was shown, generate assistant response
-        if st.session_state.get("is_typing", False) and st.session_state.get("spinner_shown", False):
-            logger.info("[ASSISTANT] Generating response...")
-            try:
-                chatbot_service = ChatbotService(chatbot_client, st.session_state["profile"])
-                last_user_message = st.session_state["messages"][-1]["content"]
-                intent = chatbot_service.detect_intent(last_user_message)
-                response = chatbot_service.get_response(
-                    last_user_message,
-                    st.session_state["messages"],
-                    st.session_state["filters"],
-                    intent,
-                    get_chatbot_today(),
-                    CatalogRepository(),
-                    RecommendationService(CatalogRepository()),
-                    events_to_json,
-                    get_profile_summary,
-                )
-                logger.info(f"[TRACE] (Before error check) Assistant response type: {type(response)}, value: {repr(response)}")
-                # Fallback: if response is a dict with 'content', extract it
-                if isinstance(response, dict) and "content" in response:
-                    response = response["content"]
-                # Robust: treat empty or whitespace-only string as invalid
-                if not response or not isinstance(response, str) or not response.strip():
-                    error_id = str(uuid.uuid4())
-                    logger.error(f"[ERROR {error_id}] Empty or invalid assistant response. Response: {repr(response)}, Type: {type(response)}, Messages: {st.session_state['messages']}")
-                    raise ValueError(f"Empty or invalid assistant response (error_id={error_id})")
-                st.session_state["chatbot_error"] = None
-            except Exception as e:
-                response = f"[System error: {e}]"
-                st.session_state["chatbot_error"] = str(e)
-                logger.error(f"[ASSISTANT] Error: {e}")
-            logger.info(f"[TRACE] (After error check, before append) Assistant response type: {type(response)}, value: {repr(response)}")
-            append_message("assistant", response)
-            logger.info(f"[TRACE] (After append) st.session_state['messages']: {st.session_state['messages']}")
-            st.session_state["is_typing"] = False
-            st.session_state["spinner_shown"] = False
-            st.rerun()
-
-        # Step 4: Render chat UI (normal state)
+        elif is_typing and spinner_shown:
+            logger.info("[TRACE] State: Backend call should run.")
+            if st.session_state["messages"] and st.session_state["messages"][-1]["role"] == "user":
+                try:
+                    logger.info("Chatbot: Backend call started.")
+                    chatbot_service = ChatbotService(chatbot_client, st.session_state["profile"])
+                    last_user_message = st.session_state["messages"][-1]["content"]
+                    intent = chatbot_service.detect_intent(last_user_message)
+                    response = chatbot_service.get_response(
+                        last_user_message,
+                        st.session_state["messages"],
+                        st.session_state["filters"],
+                        intent,
+                        get_chatbot_today(),
+                        CatalogRepository(),
+                        RecommendationService(CatalogRepository()),
+                        events_to_json,
+                        get_profile_summary,
+                    )
+                    logger.info(f"Chatbot: Backend call finished. Response: {response}")
+                    if isinstance(response, dict) and "content" in response:
+                        response = response["content"]
+                    if not response or not isinstance(response, str) or not response.strip():
+                        error_id = str(uuid.uuid4())
+                        logger.error(f"Chatbot: Empty/invalid assistant response (error_id={error_id})")
+                        raise ValueError(f"Empty or invalid assistant response (error_id={error_id})")
+                    st.session_state["chatbot_error"] = None
+                except Exception as e:
+                    response = f"[System error: {e}]"
+                    st.session_state["chatbot_error"] = str(e)
+                    logger.error(f"Chatbot: Backend error: {e}")
+                append_message("assistant", response)
+                st.session_state["is_typing"] = False
+                st.session_state["spinner_shown"] = False
+                logger.info(f"[TRACE] Backend call complete, calling st.rerun().")
+                st.rerun()
+    logger.info("[TRACE] Rendering chat UI block.")
+    with col_chat:
+        logger.info(f"[TRACE] About to render_chat_ui. session_state: {dict(st.session_state)}")
         render_chat_ui(chatbot_client)
-        # If there was an error, show it visibly in the UI
-        if st.session_state.get("chatbot_error"):
-            st.error(f"Assistant error: {st.session_state['chatbot_error']}")
+        logger.info(f"[TRACE] Chat UI rendered. is_typing={is_typing}")
+        if is_typing:
+            logger.info("[TRACE] Rendering spinner UI.")
+            render_spinner()
+        if error_message:
+            logger.error(f"Chatbot: Assistant error: {error_message}")
+            st.error(f"Assistant error: {error_message}")
+    logger.info(f"[TRACE] Rendering recommendations UI block. filters={st.session_state.get('filters')}")
     with col_recs:
         try:
             from components.recommendation_panel import RecommendationPanel
+            logger.info(f"[TRACE] About to render RecommendationPanel. filters={st.session_state.get('filters')}")
             RecommendationPanel.render(filters=st.session_state["filters"])
+            logger.info("[TRACE] Recommendations UI rendered.")
         except Exception as e:
+            logger.error(f"Recommendations: Failed to load: {e}")
             st.error(f"Failed to load recommendations: {e}")
 
-# Call main only after its definition
 if __name__ == "__main__":
     main()
-
-
-
-
