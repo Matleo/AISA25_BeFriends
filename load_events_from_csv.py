@@ -13,7 +13,7 @@ def get_latest_csv_path():
     csv_files = glob.glob("befriends/data/events/*_events.csv")
     if not csv_files:
         return None
-    # Extract number prefix from filename, e.g. '12_events.csv' -> 12
+
     def extract_number(f):
         base = os.path.basename(f)
         try:
@@ -23,7 +23,7 @@ def get_latest_csv_path():
     csv_files.sort(key=extract_number, reverse=True)
     return csv_files[0]
 
-CSV_PATH = get_latest_csv_path() or "befriends/data/events/12_events.csv"
+CSV_PATH = get_latest_csv_path()
 DB_URL = "sqlite:///events.db"
 
 def import_events_from_csv(csv_path=CSV_PATH, db_url=DB_URL, verbose=True):
