@@ -3,27 +3,12 @@ from pathlib import Path
 import streamlit as st
 
 class ProfileManager:
-    DEFAULT_PROFILE = {
-        "name": "Karolina",
-        "age": 33,
-        "city": "Basel (CH)",
-        "address": "Dornacherstr.",
-        "interests": [
-            "dance (zouk, salsa)",
-            "water sports",
-            "swimming in the Rhine",
-            "being around water",
-            "music (guitar, ukulele)",
-            "concerts",
-            "festivals",
-            "jam sessions",
-            "dogs",
-            "kids",
-            "fun social activities",
-            "outdoor activities",
-            "dog-friendly gatherings",
-            "cultural festivals"
-        ]
+    EMPTY_PROFILE = {
+        "name": "",
+        "age": None,
+        "city": "",
+        "address": "",
+        "interests": []
     }
 
     @staticmethod
@@ -35,10 +20,10 @@ class ProfileManager:
                 with open(profile_file, "r", encoding="utf-8") as f:
                     return json.load(f)
             except JSONDecodeError:
-                st.warning(f"Profile file {profile_path} is malformed. Using fallback profile.")
-                return ProfileManager.DEFAULT_PROFILE.copy()
-        st.warning(f"Profile file {profile_path} not found. Using fallback profile.")
-        return ProfileManager.DEFAULT_PROFILE.copy()
+                st.warning(f"Profile file {profile_path} is malformed. Using empty profile.")
+                return ProfileManager.EMPTY_PROFILE.copy()
+        st.warning(f"Profile file {profile_path} not found. Using empty profile.")
+        return ProfileManager.EMPTY_PROFILE.copy()
 
     @staticmethod
     def ensure_profile_in_session():
@@ -48,7 +33,7 @@ class ProfileManager:
 
     @staticmethod
     def get_default_city() -> str:
-        return ProfileManager.ensure_profile_in_session()["city"]
+        return ProfileManager.ensure_profile_in_session().get("city", "")
 
     @staticmethod
     def get_default_filters() -> dict:
@@ -56,7 +41,8 @@ class ProfileManager:
         from befriends.common.config import AppConfig
         config = AppConfig.from_env()
         db_path = config.db_url.replace("sqlite:///", "") if config.db_url.startswith("sqlite:///") else config.db_url
-        city_value = ProfileManager.ensure_profile_in_session()["city"]
+        profile = ProfileManager.ensure_profile_in_session()
+        city_value = profile.get("city", "")
         try:
             with sqlite3.connect(db_path) as conn:
                 cur = conn.cursor()

@@ -99,9 +99,11 @@ class CatalogRepository:
             logger.info(f"[DEBUG] search_text SQL after text filter: {str(q)}")
             if filters:
                 logger.info(f"[DEBUG] search_text applying filters: {filters}")
-                if filters.get("region_standardized"):
-                    q = q.filter(EventORM.region_standardized == filters["region_standardized"])
-                    logger.info(f"[DEBUG] search_text filter region_standardized={filters['region_standardized']}")
+                region_val = filters.get("region_standardized")
+                # Only filter by region if not 'All' and not empty
+                if region_val and region_val != "All":
+                    q = q.filter(EventORM.region_standardized == region_val)
+                    logger.info(f"[DEBUG] search_text filter region_standardized={region_val}")
                 if filters.get("event_type"):
                     q = q.filter(EventORM.event_type == filters["event_type"])
                     logger.info(f"[DEBUG] search_text filter event_type={filters['event_type']}")

@@ -52,6 +52,12 @@ def load_events_from_csv(csv_path: str) -> List[Event]:
             for field in expected_fields:
                 if field not in row and field.replace("_", "-") not in row:
                     logging.warning(f"[CSV Loader] Missing or unmapped field: '{field}' in row: {row}")
+            price_min = parse_float(row.get("price_min") or row.get("price-min"))
+            price_max = parse_float(row.get("price_max") or row.get("price-max"))
+            if price_min is None:
+                price_min = 0.0
+            if price_max is None:
+                price_max = 0.0
             event = Event(
                 id=row.get("id"),
                 event_name=row.get("event_name") or row.get("event-name") or "",
@@ -62,8 +68,8 @@ def load_events_from_csv(csv_path: str) -> List[Event]:
                 event_type=row.get("event_type") or row.get("event-type"),
                 dance_focus=row.get("dance_focus") or row.get("dance-focus"),
                 dance_style=parse_dance_style(row.get("dance_style") or row.get("dance-style")),
-                price_min=parse_float(row.get("price_min") or row.get("price-min")),
-                price_max=parse_float(row.get("price_max") or row.get("price-max")),
+                price_min=price_min,
+                price_max=price_max,
                 currency=row.get("currency"),
                 pricing_type=row.get("pricing_type") or row.get("pricing-type"),
                 price_category=row.get("price_category") or row.get("price-category"),
@@ -95,4 +101,4 @@ def load_events_from_csv(csv_path: str) -> List[Event]:
                 longitude=parse_float(row.get("longitude")),
             )
             events.append(event)
-    return events
+        return events

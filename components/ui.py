@@ -82,6 +82,8 @@ def render_sidebar_filters(default_city=None):
             region_options = [row[0] for row in cur.fetchall()]
     except Exception:
         region_options = ["Basel (CH)"]
+    # Add 'All' option at the top
+    region_options = ["All"] + region_options
     def trigger_apply_filter():
         st.session_state["region_changed"] = True
 
